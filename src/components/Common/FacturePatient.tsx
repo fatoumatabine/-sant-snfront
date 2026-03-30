@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, Printer, Download, CheckCircle2, Clock, XCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -180,6 +180,23 @@ const InfoRow: React.FC<{ label: string; value?: string | React.ReactNode; full?
 export const FacturePatient: React.FC<FacturePatientProps> = ({ paiement, onClose }) => {
   const printRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [onClose]);
+
   const statut = statutConfig[paiement.statut] ?? statutConfig['en_attente'];
   const consultDate = paiement.rendezVous?.date ?? paiement.createdAt;
   const invoiceDate = formatDate(paiement.date_paiement ?? paiement.createdAt);
@@ -219,11 +236,29 @@ export const FacturePatient: React.FC<FacturePatientProps> = ({ paiement, onClos
 
   return (
     /* ── Overlay ── */
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-4 md:p-6"
+      onClick={onClose}
+    >
+      <div className="fixed right-4 top-4 z-20 md:right-6 md:top-6">
+        <Button
+          variant="secondary"
+          className="gap-2 border border-white/30 bg-white/95 text-slate-900 shadow-lg hover:bg-white"
+          onClick={onClose}
+        >
+          <X className="h-4 w-4" />
+          Fermer
+        </Button>
+      </div>
+
       {/* ── Wrapper ── */}
-      <div className="relative flex flex-col" style={{ maxHeight: '95vh', width: '100%', maxWidth: 700 }}>
+      <div
+        className="mx-auto flex min-h-full w-full items-start justify-center py-4"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="relative flex flex-col" style={{ maxHeight: '95vh', width: '100%', maxWidth: 700 }}>
         {/* Toolbar (outside the paper) */}
-        <div className="flex items-center justify-between mb-3 px-1">
+        <div className="sticky top-0 z-10 mb-3 flex items-center justify-between px-1">
           <div className="flex gap-2">
             <Button
               variant="secondary"
@@ -472,6 +507,7 @@ export const FacturePatient: React.FC<FacturePatientProps> = ({ paiement, onClos
               </footer>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

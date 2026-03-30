@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Activity, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fadeUp, staggerContainer, staggerItem, viewport } from '@/lib/animations';
+import { marketingImages } from '@/lib/marketingImages';
 
 const services = [
   {
@@ -10,18 +11,16 @@ const services = [
     title: 'Laboratoire Moderne',
     description:
       'Analyses médicales précises avec des équipements de pointe pour des résultats fiables et rapides.',
-    image:
-      'https://images.pexels.com/photos/3825572/pexels-photo-3825572.jpeg?auto=compress&cs=tinysrgb&w=900',
-    href: '/auth/register',
+    image: marketingImages.homeServiceLab,
+    href: '/services',
   },
   {
     Icon: Users,
     title: 'Médecins Expérimentés',
     description:
       'Une équipe de spécialistes qualifiés et dévoués pour vous accompagner dans tous vos besoins de santé.',
-    image:
-      'https://images.pexels.com/photos/8376212/pexels-photo-8376212.jpeg?auto=compress&cs=tinysrgb&w=900',
-    href: '/auth/register',
+    image: marketingImages.homeServiceDoctors,
+    href: '/services',
   },
 ];
 

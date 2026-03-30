@@ -1,16 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Heart, ChevronDown, LogOut, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
-
-const navLinks = [
-  { label: 'Accueil', href: '/' },
-  { label: 'Services', href: '#services' },
-  { label: 'Médecins', href: '#medecins' },
-  { label: 'À Propos', href: '#about' },
-  { label: 'Contact', href: '#contact' },
-];
+import { marketingNavLinks } from './marketingNavigation';
 
 export const HomeNavbar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -18,6 +11,7 @@ export const HomeNavbar: React.FC = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -25,17 +19,14 @@ export const HomeNavbar: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    setMobileOpen(false);
+    setProfileOpen(false);
+  }, [location.pathname]);
+
   const handleLogout = () => {
     logout();
     navigate('/');
-  };
-
-  const handleNavClick = (href: string) => {
-    setMobileOpen(false);
-    if (href.startsWith('#')) {
-      const el = document.querySelector(href);
-      el?.scrollIntoView({ behavior: 'smooth' });
-    }
   };
 
   return (
@@ -60,20 +51,22 @@ export const HomeNavbar: React.FC = () => {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                onClick={(e) => {
-                  if (link.href.startsWith('#')) {
-                    e.preventDefault();
-                    handleNavClick(link.href);
-                  }
-                }}
-                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-[#005461] hover:bg-[#e6f7f4] rounded-lg transition-all duration-200"
+            {marketingNavLinks.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.to === '/'}
+                className={({ isActive }) =>
+                  cn(
+                    'px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200',
+                    isActive
+                      ? 'bg-[#e6f7f4] text-[#005461]'
+                      : 'text-gray-600 hover:text-[#005461] hover:bg-[#e6f7f4]',
+                  )
+                }
               >
                 {link.label}
-              </a>
+              </NavLink>
             ))}
           </div>
 
@@ -153,20 +146,22 @@ export const HomeNavbar: React.FC = () => {
         {mobileOpen && (
           <div className="md:hidden pb-5 border-t border-gray-100">
             <div className="flex flex-col gap-1 pt-4">
-              {navLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={(e) => {
-                    if (link.href.startsWith('#')) {
-                      e.preventDefault();
-                    }
-                    handleNavClick(link.href);
-                  }}
-                  className="py-2.5 px-3 text-sm font-medium text-gray-600 hover:text-[#005461] hover:bg-[#e6f7f4] rounded-lg transition-colors"
+              {marketingNavLinks.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.to === '/'}
+                  className={({ isActive }) =>
+                    cn(
+                      'py-2.5 px-3 text-sm font-medium rounded-lg transition-colors',
+                      isActive
+                        ? 'bg-[#e6f7f4] text-[#005461]'
+                        : 'text-gray-600 hover:text-[#005461] hover:bg-[#e6f7f4]',
+                    )
+                  }
                 >
                   {link.label}
-                </a>
+                </NavLink>
               ))}
               <div className="flex flex-col gap-2 pt-3 mt-2 border-t border-gray-100">
                 {isAuthenticated && user ? (

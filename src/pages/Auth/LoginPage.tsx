@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Eye, EyeOff, Loader2, Mail, Lock, Heart,
@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore, getRedirectPath } from '@/store/authStore';
 import { ErrorAlert } from '@/components/Common/Alert';
+import { apiService } from '@/services/api';
 
 /* ─── Right-panel trust items ─── */
 const TRUST_ITEMS = [
@@ -47,9 +48,27 @@ export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe]     = useState(false);
   const [focused, setFocused]           = useState('');
+  const [showSlowServerHint, setShowSlowServerHint] = useState(false);
 
   const { login, isLoading, error, clearError } = useAuthStore();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    void apiService.warmUp();
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setShowSlowServerHint(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setShowSlowServerHint(true);
+    }, 4000);
+
+    return () => window.clearTimeout(timer);
+  }, [isLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,6 +238,13 @@ export const LoginPage: React.FC = () => {
                     </>
                   )}
                 </button>
+
+                {showSlowServerHint && (
+                  <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    Le serveur met du temps a repondre. Si l'API est sur Render, elle est peut-etre
+                    en train de se reveiller.
+                  </p>
+                )}
 
                 {/* Divider */}
                 <div className="flex items-center gap-3 py-1">

@@ -22,6 +22,7 @@ export const API_ENDPOINTS = {
     list: '/medecins',
     get: (id: string) => `/medecins/${id}`,
     profileMe: '/medecins/profile/me',
+    publicCatalog: '/medecins/public/catalog',
     specialites: '/medecins/specialites',
     bySpecialite: (specialite: string) => `/medecins/specialite/${specialite}`,
   },
@@ -150,6 +151,7 @@ export const API_ENDPOINTS = {
   },
 
   settings: {
+    publicSite: '/settings/public-site',
     app: '/settings/app',
     admin: '/settings/admin',
     me: '/settings/me',

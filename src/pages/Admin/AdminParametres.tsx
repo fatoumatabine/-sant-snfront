@@ -15,7 +15,9 @@ import {
   Save,
   RefreshCw,
   Download,
-  Upload
+  Upload,
+  Phone,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useSettingsStore } from '@/store/settingsStore';
 import { apiService } from '@/services/api';
@@ -64,6 +67,40 @@ type SystemSettings = {
   debugMode: boolean;
 };
 
+type MarketingAboutSettings = {
+  heroEyebrow: string;
+  heroTitle: string;
+  heroDescription: string;
+  heroBadge: string;
+  missionTitle: string;
+  missionDescription: string;
+  missionPoint1: string;
+  missionPoint2: string;
+  missionPoint3: string;
+  missionPoint4: string;
+  humanityDescription: string;
+  trustDescription: string;
+  simplicityDescription: string;
+};
+
+type MarketingContactSettings = {
+  heroEyebrow: string;
+  heroTitle: string;
+  heroDescription: string;
+  heroBadge: string;
+  phone: string;
+  email: string;
+  location: string;
+  hours: string;
+  formIntro: string;
+  responseTime: string;
+};
+
+type MarketingSettings = {
+  about: MarketingAboutSettings;
+  contact: MarketingContactSettings;
+};
+
 const defaultGeneralSettings: GeneralSettings = {
   appName: 'Santé SN',
   appDescription: 'Plateforme de gestion des rendez-vous médicaux',
@@ -96,6 +133,43 @@ const defaultSystemSettings: SystemSettings = {
   debugMode: false
 };
 
+const defaultMarketingSettings: MarketingSettings = {
+  about: {
+    heroEyebrow: 'À propos de Santé SN',
+    heroTitle: 'Une plateforme pensée pour moderniser le soin sans perdre sa dimension humaine.',
+    heroDescription:
+      'Notre ambition est simple : construire un environnement de santé numérique crédible, élégant et utile pour les patients comme pour les professionnels.',
+    heroBadge: 'Santé numérique, mais toujours profondément humaine',
+    missionTitle: 'Concevoir une expérience de santé qui inspire immédiatement confiance.',
+    missionDescription:
+      'Nous voulons qu’un patient comprenne rapidement où aller, comment être aidé et ce qu’il se passera ensuite. Cette clarté change profondément la perception du service.',
+    missionPoint1: 'Rendre la consultation accessible depuis n’importe où',
+    missionPoint2: 'Réduire les zones de flou entre prise de rendez-vous et suivi',
+    missionPoint3: 'Mieux préparer les médecins grâce à un contexte structuré',
+    missionPoint4: 'Créer une interface moderne sans perdre la chaleur humaine',
+    humanityDescription:
+      'Nous cherchons à rendre la relation de soin plus proche, plus douce et plus claire à chaque étape.',
+    trustDescription:
+      'La plateforme doit inspirer le sérieux, protéger les données et clarifier les décisions médicales.',
+    simplicityDescription:
+      'Nous simplifions les parcours complexes pour que l’utilisateur sache toujours où cliquer et quoi faire.',
+  },
+  contact: {
+    heroEyebrow: 'Contact Santé SN',
+    heroTitle: 'Une page de contact complète, claire et immédiatement exploitable.',
+    heroDescription:
+      'Que vous vouliez réserver, poser une question ou parler d’un partenariat, nous avons structuré cette page pour rendre le premier échange simple et rassurant.',
+    heroBadge: 'Contact pensé pour rassurer avant même le premier échange',
+    phone: '+221 33 123 45 67',
+    email: 'contact@santesn.sn',
+    location: 'Dakar, Sénégal',
+    hours: 'Lun - Ven / 8h00 - 18h00',
+    formIntro:
+      'Ce formulaire ouvre votre application email avec un message déjà préparé. C’est simple, rapide et suffisant pour une première prise de contact.',
+    responseTime: '< 24h',
+  },
+};
+
 export const AdminParametres: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -110,6 +184,8 @@ export const AdminParametres: React.FC = () => {
 
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(defaultSystemSettings);
 
+  const [marketingSettings, setMarketingSettings] = useState<MarketingSettings>(defaultMarketingSettings);
+
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -120,12 +196,20 @@ export const AdminParametres: React.FC = () => {
         setNotificationSettings({ ...defaultNotificationSettings, ...normalized.notificationSettings });
         setSecuritySettings({ ...defaultSecuritySettings, ...normalized.securitySettings });
         setSystemSettings({ ...defaultSystemSettings, ...normalized.systemSettings });
+        setMarketingSettings({
+          about: { ...defaultMarketingSettings.about, ...normalized.marketingSettings.about },
+          contact: { ...defaultMarketingSettings.contact, ...normalized.marketingSettings.contact },
+        });
       } catch {
         const fallback = readAdminSettings();
         setGeneralSettings({ ...defaultGeneralSettings, ...fallback.generalSettings });
         setNotificationSettings({ ...defaultNotificationSettings, ...fallback.notificationSettings });
         setSecuritySettings({ ...defaultSecuritySettings, ...fallback.securitySettings });
         setSystemSettings({ ...defaultSystemSettings, ...fallback.systemSettings });
+        setMarketingSettings({
+          about: { ...defaultMarketingSettings.about, ...fallback.marketingSettings.about },
+          contact: { ...defaultMarketingSettings.contact, ...fallback.marketingSettings.contact },
+        });
         toast.error('Impossible de charger les paramètres depuis le serveur');
       }
     };
@@ -156,6 +240,7 @@ export const AdminParametres: React.FC = () => {
         notificationSettings,
         securitySettings,
         systemSettings,
+        marketingSettings,
         updatedAt: new Date().toISOString()
       };
 
@@ -178,6 +263,7 @@ export const AdminParametres: React.FC = () => {
         notificationSettings,
         securitySettings,
         systemSettings,
+        marketingSettings,
         exportedAt: new Date().toISOString()
       };
 
@@ -215,6 +301,10 @@ export const AdminParametres: React.FC = () => {
       setNotificationSettings({ ...defaultNotificationSettings, ...parsed.notificationSettings });
       setSecuritySettings({ ...defaultSecuritySettings, ...parsed.securitySettings });
       setSystemSettings({ ...defaultSystemSettings, ...parsed.systemSettings });
+      setMarketingSettings({
+        about: { ...defaultMarketingSettings.about, ...(parsed.marketingSettings?.about || {}) },
+        contact: { ...defaultMarketingSettings.contact, ...(parsed.marketingSettings?.contact || {}) },
+      });
       toast.success('Paramètres importés. Cliquez sur Enregistrer pour appliquer.');
     } catch {
       toast.error('Impossible de lire ce fichier');
@@ -231,6 +321,10 @@ export const AdminParametres: React.FC = () => {
       setNotificationSettings({ ...defaultNotificationSettings, ...payload.notificationSettings });
       setSecuritySettings({ ...defaultSecuritySettings, ...payload.securitySettings });
       setSystemSettings({ ...defaultSystemSettings, ...payload.systemSettings });
+      setMarketingSettings({
+        about: { ...defaultMarketingSettings.about, ...payload.marketingSettings.about },
+        contact: { ...defaultMarketingSettings.contact, ...payload.marketingSettings.contact },
+      });
       setLanguage(payload.generalSettings.language);
       document.title = payload.generalSettings.appName;
       toast.success('Paramètres réinitialisés');
@@ -298,10 +392,14 @@ export const AdminParametres: React.FC = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto">
+        <TabsList className="grid w-full grid-cols-5 lg:w-auto">
           <TabsTrigger value="general" className="gap-2">
             <Globe className="h-4 w-4" />
             <span className="hidden sm:inline">Général</span>
+          </TabsTrigger>
+          <TabsTrigger value="marketing" className="gap-2">
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline">Marketing</span>
           </TabsTrigger>
           <TabsTrigger value="notifications" className="gap-2">
             <Bell className="h-4 w-4" />
@@ -404,6 +502,292 @@ export const AdminParametres: React.FC = () => {
                       <SelectItem value="100">100</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="marketing" className="space-y-6">
+          <Card className="card-health">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Contenu À Propos
+              </CardTitle>
+              <CardDescription>
+                Les champs ci-dessous alimentent directement la page publique À Propos.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Eyebrow</Label>
+                  <Input
+                    value={marketingSettings.about.heroEyebrow}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        about: { ...marketingSettings.about, heroEyebrow: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Badge</Label>
+                  <Input
+                    value={marketingSettings.about.heroBadge}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        about: { ...marketingSettings.about, heroBadge: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Titre héros</Label>
+                  <Textarea
+                    rows={2}
+                    value={marketingSettings.about.heroTitle}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        about: { ...marketingSettings.about, heroTitle: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Description héros</Label>
+                  <Textarea
+                    rows={3}
+                    value={marketingSettings.about.heroDescription}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        about: { ...marketingSettings.about, heroDescription: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Titre mission</Label>
+                  <Textarea
+                    rows={2}
+                    value={marketingSettings.about.missionTitle}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        about: { ...marketingSettings.about, missionTitle: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Description mission</Label>
+                  <Textarea
+                    rows={3}
+                    value={marketingSettings.about.missionDescription}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        about: { ...marketingSettings.about, missionDescription: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                {(['missionPoint1', 'missionPoint2', 'missionPoint3', 'missionPoint4'] as const).map((key, index) => (
+                  <div className="space-y-2 md:col-span-2" key={key}>
+                    <Label>Point mission {index + 1}</Label>
+                    <Input
+                      value={marketingSettings.about[key]}
+                      onChange={(e) =>
+                        setMarketingSettings({
+                          ...marketingSettings,
+                          about: { ...marketingSettings.about, [key]: e.target.value }
+                        })
+                      }
+                    />
+                  </div>
+                ))}
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Description Humanité</Label>
+                  <Textarea
+                    rows={3}
+                    value={marketingSettings.about.humanityDescription}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        about: { ...marketingSettings.about, humanityDescription: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description Confiance</Label>
+                  <Textarea
+                    rows={4}
+                    value={marketingSettings.about.trustDescription}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        about: { ...marketingSettings.about, trustDescription: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description Simplicité</Label>
+                  <Textarea
+                    rows={4}
+                    value={marketingSettings.about.simplicityDescription}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        about: { ...marketingSettings.about, simplicityDescription: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="card-health">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Phone className="h-5 w-5 text-primary" />
+                Contenu Contact
+              </CardTitle>
+              <CardDescription>
+                Ces informations sont réutilisées sur la page publique Contact.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Eyebrow</Label>
+                  <Input
+                    value={marketingSettings.contact.heroEyebrow}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        contact: { ...marketingSettings.contact, heroEyebrow: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Badge</Label>
+                  <Input
+                    value={marketingSettings.contact.heroBadge}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        contact: { ...marketingSettings.contact, heroBadge: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Titre héros</Label>
+                  <Textarea
+                    rows={2}
+                    value={marketingSettings.contact.heroTitle}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        contact: { ...marketingSettings.contact, heroTitle: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Description héros</Label>
+                  <Textarea
+                    rows={3}
+                    value={marketingSettings.contact.heroDescription}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        contact: { ...marketingSettings.contact, heroDescription: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Téléphone</Label>
+                  <Input
+                    value={marketingSettings.contact.phone}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        contact: { ...marketingSettings.contact, phone: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    value={marketingSettings.contact.email}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        contact: { ...marketingSettings.contact, email: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Localisation</Label>
+                  <Input
+                    value={marketingSettings.contact.location}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        contact: { ...marketingSettings.contact, location: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Horaires</Label>
+                  <Input
+                    value={marketingSettings.contact.hours}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        contact: { ...marketingSettings.contact, hours: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Délai de réponse affiché</Label>
+                  <Input
+                    value={marketingSettings.contact.responseTime}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        contact: { ...marketingSettings.contact, responseTime: e.target.value }
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Introduction du formulaire</Label>
+                  <Textarea
+                    rows={4}
+                    value={marketingSettings.contact.formIntro}
+                    onChange={(e) =>
+                      setMarketingSettings({
+                        ...marketingSettings,
+                        contact: { ...marketingSettings.contact, formIntro: e.target.value }
+                      })
+                    }
+                  />
                 </div>
               </div>
             </CardContent>

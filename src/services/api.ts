@@ -1,6 +1,4 @@
-// Configuration API - URL de base
-// Utiliser le proxy Vite qui redirige /api vers localhost:5000
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+import { API_BASE_URL, API_PROXY_BASE_URL, fetchWithTimeout, toApiNetworkError, warmUpApi } from '@/lib/api-network';
 
 /**
  * Service API pour toutes les requêtes HTTP
@@ -8,6 +6,63 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 class APIService {
   private baseURL: string;
   private token: string | null = null;
+
+  private buildUrl(endpoint: string, baseURL: string = this.baseURL): string {
+    return `${baseURL}${endpoint}`;
+  }
+
+  private shouldTryProxyFallback(): boolean {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    const hostname = window.location.hostname;
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+  }
+
+  private buildBaseUrlCandidates(): string[] {
+    const candidates = [this.baseURL];
+
+    if (this.shouldTryProxyFallback()) {
+      candidates.push(API_PROXY_BASE_URL);
+    }
+
+    return Array.from(
+      new Set(
+        candidates
+          .map((value) => value.replace(/\/+$/, ''))
+          .filter(Boolean)
+      )
+    );
+  }
+
+  private async fetchWithHandling(endpoint: string, options: RequestInit): Promise<Response> {
+    const candidates = this.buildBaseUrlCandidates();
+    let lastError: Error | null = null;
+
+    for (const candidate of candidates) {
+      const url = this.buildUrl(endpoint, candidate);
+
+      try {
+        const response = await fetchWithTimeout(url, options);
+
+        if (candidate !== this.baseURL) {
+          console.info('[API Network Fallback]', {
+            previousBaseURL: this.baseURL,
+            nextBaseURL: candidate,
+          });
+          this.baseURL = candidate;
+        }
+
+        return response;
+      } catch (error) {
+        console.error('[API Network Error]', { url, error });
+        lastError = toApiNetworkError(error, url);
+      }
+    }
+
+    throw lastError || new Error('Erreur reseau inattendue');
+  }
 
   private notifyMutation(endpoint: string, method: 'POST' | 'PUT' | 'DELETE'): void {
     if (typeof window === 'undefined') return;
@@ -49,6 +104,10 @@ class APIService {
     this.token = token;
   }
 
+  async warmUp(): Promise<void> {
+    await warmUpApi(this.baseURL);
+  }
+
   /**
    * Retourne les headers de base
    */
@@ -69,7 +128,7 @@ class APIService {
    * GET request
    */
   async get<T = any>(endpoint: string, options?: RequestInit): Promise<T> {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
+    const response = await this.fetchWithHandling(endpoint, {
       method: 'GET',
       headers: this.getHeaders(),
       ...options,
@@ -82,7 +141,7 @@ class APIService {
    * POST request
    */
   async post<T = any>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
+    const response = await this.fetchWithHandling(endpoint, {
       method: 'POST',
       headers: this.getHeaders(),
       body: data ? JSON.stringify(data) : undefined,
@@ -97,7 +156,7 @@ class APIService {
    * PUT request
    */
   async put<T = any>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
+    const response = await this.fetchWithHandling(endpoint, {
       method: 'PUT',
       headers: this.getHeaders(),
       body: data ? JSON.stringify(data) : undefined,
@@ -112,7 +171,7 @@ class APIService {
    * DELETE request
    */
   async delete<T = any>(endpoint: string, options?: RequestInit): Promise<T> {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
+    const response = await this.fetchWithHandling(endpoint, {
       method: 'DELETE',
       headers: this.getHeaders(),
       ...options,
@@ -123,7 +182,7 @@ class APIService {
   }
 
   async getBlob(endpoint: string, options?: RequestInit): Promise<Blob> {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
+    const response = await this.fetchWithHandling(endpoint, {
       method: 'GET',
       headers: this.getHeaders('application/json'),
       ...options,

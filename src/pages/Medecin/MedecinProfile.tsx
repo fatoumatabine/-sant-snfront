@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react';
-import { BriefcaseMedical, Mail, Phone, Save, User } from 'lucide-react';
+import {
+  BriefcaseMedical,
+  CreditCard,
+  Lock,
+  Mail,
+  MapPin,
+  Phone,
+  ShieldCheck,
+  User,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ProfileSectionCard, ProfileShell } from '@/components/profile/ProfileShell';
 import { apiService } from '@/services/api';
 import { API_ENDPOINTS } from '@/config/api-endpoints';
 import { useAuthStore } from '@/store/authStore';
@@ -19,6 +29,7 @@ interface MedecinProfilePayload {
   tarif_consultation?: number | null;
   user?: {
     email?: string;
+    avatarUrl?: string | null;
   };
 }
 
@@ -35,13 +46,21 @@ export const MedecinProfile = () => {
   const [formData, setFormData] = useState({
     prenom: '',
     nom: '',
+    email: '',
     specialite: '',
     telephone: '',
     adresse: '',
     tarif_consultation: '',
+    avatarUrl: null as string | null,
+  });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -55,6 +74,7 @@ export const MedecinProfile = () => {
         setFormData({
           prenom: payload.prenom || '',
           nom: payload.nom || '',
+          email: payload.user?.email || user?.email || '',
           specialite: payload.specialite || '',
           telephone: payload.telephone || '',
           adresse: payload.adresse || '',
@@ -62,6 +82,7 @@ export const MedecinProfile = () => {
             payload.tarif_consultation !== null && payload.tarif_consultation !== undefined
               ? String(payload.tarif_consultation)
               : '',
+          avatarUrl: payload.user?.avatarUrl || user?.avatar || null,
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Impossible de charger le profil');
@@ -83,12 +104,14 @@ export const MedecinProfile = () => {
       const response = await apiService.put(`/medecins/${profile.id}`, {
         prenom: formData.prenom.trim(),
         nom: formData.nom.trim(),
+        email: formData.email.trim(),
         specialite: formData.specialite.trim(),
         telephone: formData.telephone.trim(),
         adresse: formData.adresse.trim() || undefined,
         tarif_consultation: formData.tarif_consultation.trim()
           ? Number(formData.tarif_consultation)
           : undefined,
+        avatarUrl: formData.avatarUrl,
       });
 
       const updatedProfile = unwrapData<Partial<MedecinProfilePayload>>(response);
@@ -99,7 +122,9 @@ export const MedecinProfile = () => {
           ...user,
           prenom: formData.prenom.trim(),
           nom: formData.nom.trim(),
+          email: formData.email.trim(),
           telephone: formData.telephone.trim(),
+          avatar: formData.avatarUrl || undefined,
         });
       }
 
@@ -110,6 +135,42 @@ export const MedecinProfile = () => {
       toast.error(message);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      toast.error('Tous les champs mot de passe sont obligatoires');
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('Les mots de passe ne correspondent pas');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      toast.error('Le nouveau mot de passe doit contenir au moins 8 caractères');
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+      await apiService.put(API_ENDPOINTS.auth.changePassword, {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+      });
+
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      toast.success('Mot de passe modifié');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Impossible de modifier le mot de passe');
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -127,131 +188,254 @@ export const MedecinProfile = () => {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold font-display">Profil médecin</h1>
-        <p className="text-muted-foreground">
-          Gérez les informations professionnelles visibles dans votre espace.
+    <ProfileShell
+      role="medecin"
+      title="Profil médecin"
+      description="Mettez à jour votre identité, votre photo et les informations professionnelles visibles dans tout votre espace de consultation."
+      name={`${formData.prenom} ${formData.nom}`.trim() || `${user?.prenom || ''} ${user?.nom || ''}`.trim()}
+      email={formData.email || user?.email || ''}
+      avatar={formData.avatarUrl || user?.avatar || null}
+      onAvatarChange={(value) => setFormData((current) => ({ ...current, avatarUrl: value }))}
+      avatarDisabled={isSaving}
+      heroStats={[
+        { label: 'Spécialité', value: formData.specialite || 'À renseigner' },
+        {
+          label: 'Tarif',
+          value: formData.tarif_consultation ? `${formData.tarif_consultation} FCFA` : 'Non défini',
+        },
+        { label: 'Photo', value: formData.avatarUrl ? 'Ajoutée' : 'À compléter' },
+      ]}
+      summaryItems={[
+        { icon: Mail, label: 'Email', value: formData.email || '-' },
+        { icon: Phone, label: 'Téléphone', value: formData.telephone || '-' },
+        { icon: BriefcaseMedical, label: 'Spécialité', value: formData.specialite || '-' },
+      ]}
+      helperNote={
+        <p>
+          Votre photo et votre identité sont réutilisées dans le catalogue médecin, la navigation et les échanges
+          internes.
         </p>
-      </div>
-
-      {error && (
-        <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
-
-      <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="card-health space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-primary/10 p-3 text-primary">
-              <User className="h-5 w-5" />
+      }
+      personalTab={
+        <ProfileSectionCard
+          icon={User}
+          title="Informations du praticien"
+          description="Nom, contact, spécialité et informations de cabinet visibles dans votre espace."
+          footer={
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-2xl"
+                disabled={isSaving || !profile}
+                onClick={() => {
+                  if (!profile) return;
+                  setFormData({
+                    prenom: profile.prenom || '',
+                    nom: profile.nom || '',
+                    email: profile.user?.email || user?.email || '',
+                    specialite: profile.specialite || '',
+                    telephone: profile.telephone || '',
+                    adresse: profile.adresse || '',
+                    tarif_consultation:
+                      profile.tarif_consultation !== null && profile.tarif_consultation !== undefined
+                        ? String(profile.tarif_consultation)
+                        : '',
+                    avatarUrl: profile.user?.avatarUrl || user?.avatar || null,
+                  });
+                }}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={isSaving || !profile}
+                className="flex-1 rounded-2xl"
+              >
+                {isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+              </Button>
             </div>
-            <div>
-              <h2 className="text-lg font-semibold">Informations personnelles</h2>
-              <p className="text-sm text-muted-foreground">Nom affiché, contact et identité du compte.</p>
-            </div>
-          </div>
+          }
+        >
+          <div className="space-y-6">
+            {error ? (
+              <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                {error}
+              </div>
+            ) : null}
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="medecin-prenom">Prénom</Label>
-              <Input
-                id="medecin-prenom"
-                value={formData.prenom}
-                onChange={(event) => setFormData((current) => ({ ...current, prenom: event.target.value }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="medecin-nom">Nom</Label>
-              <Input
-                id="medecin-nom"
-                value={formData.nom}
-                onChange={(event) => setFormData((current) => ({ ...current, nom: event.target.value }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="medecin-email">Email du compte</Label>
-              <div className="relative">
-                <Mail className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="medecin-prenom">Prénom</Label>
                 <Input
-                  id="medecin-email"
-                  value={profile?.user?.email || user?.email || ''}
-                  className="pl-9"
-                  readOnly
+                  id="medecin-prenom"
+                  className="h-12 rounded-2xl"
+                  value={formData.prenom}
+                  onChange={(event) => setFormData((current) => ({ ...current, prenom: event.target.value }))}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="medecin-nom">Nom</Label>
+                <Input
+                  id="medecin-nom"
+                  className="h-12 rounded-2xl"
+                  value={formData.nom}
+                  onChange={(event) => setFormData((current) => ({ ...current, nom: event.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="medecin-email">Email du compte</Label>
+                <div className="relative">
+                  <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="medecin-email"
+                    className="h-12 rounded-2xl pl-10"
+                    value={formData.email}
+                    onChange={(event) => setFormData((current) => ({ ...current, email: event.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="medecin-telephone">Téléphone</Label>
+                <div className="relative">
+                  <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="medecin-telephone"
+                    value={formData.telephone}
+                    className="h-12 rounded-2xl pl-10"
+                    onChange={(event) => setFormData((current) => ({ ...current, telephone: event.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="medecin-specialite">Spécialité</Label>
+                <div className="relative">
+                  <BriefcaseMedical className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="medecin-specialite"
+                    className="h-12 rounded-2xl pl-10"
+                    value={formData.specialite}
+                    onChange={(event) => setFormData((current) => ({ ...current, specialite: event.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="medecin-tarif">Tarif consultation</Label>
+                <div className="relative">
+                  <CreditCard className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="medecin-tarif"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className="h-12 rounded-2xl pl-10"
+                    value={formData.tarif_consultation}
+                    onChange={(event) =>
+                      setFormData((current) => ({ ...current, tarif_consultation: event.target.value }))
+                    }
+                  />
+                </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="medecin-telephone">Téléphone</Label>
+              <Label htmlFor="medecin-adresse">Adresse du cabinet</Label>
               <div className="relative">
-                <Phone className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="medecin-telephone"
-                  value={formData.telephone}
-                  className="pl-9"
-                  onChange={(event) => setFormData((current) => ({ ...current, telephone: event.target.value }))}
+                <MapPin className="pointer-events-none absolute left-4 top-4 h-4 w-4 text-muted-foreground" />
+                <Textarea
+                  id="medecin-adresse"
+                  className="min-h-[126px] rounded-2xl pl-10"
+                  value={formData.adresse}
+                  onChange={(event) => setFormData((current) => ({ ...current, adresse: event.target.value }))}
+                  rows={4}
                 />
               </div>
             </div>
           </div>
-        </div>
-
-        <div className="card-health space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-accent/10 p-3 text-accent">
-              <BriefcaseMedical className="h-5 w-5" />
+        </ProfileSectionCard>
+      }
+      securityTab={
+        <ProfileSectionCard
+          icon={ShieldCheck}
+          title="Sécurité du praticien"
+          description="Changez votre mot de passe pour sécuriser vos accès au planning, aux consultations et aux ordonnances."
+          footer={
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-2xl"
+                disabled={isChangingPassword}
+                onClick={() =>
+                  setPasswordData({
+                    currentPassword: '',
+                    newPassword: '',
+                    confirmPassword: '',
+                  })
+                }
+              >
+                Annuler
+              </Button>
+              <Button
+                className="flex-1 rounded-2xl"
+                disabled={isChangingPassword}
+                onClick={handleChangePassword}
+              >
+                {isChangingPassword ? 'Mise à jour...' : 'Mettre à jour le mot de passe'}
+              </Button>
             </div>
-            <div>
-              <h2 className="text-lg font-semibold">Informations professionnelles</h2>
-              <p className="text-sm text-muted-foreground">Spécialité, tarif et adresse du cabinet.</p>
-            </div>
-          </div>
-
+          }
+        >
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="medecin-specialite">Spécialité</Label>
-              <Input
-                id="medecin-specialite"
-                value={formData.specialite}
-                onChange={(event) => setFormData((current) => ({ ...current, specialite: event.target.value }))}
-              />
+              <Label htmlFor="medecin-current-password">Mot de passe actuel</Label>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="medecin-current-password"
+                  type="password"
+                  className="h-12 rounded-2xl pl-10"
+                  value={passwordData.currentPassword}
+                  onChange={(event) =>
+                    setPasswordData((current) => ({ ...current, currentPassword: event.target.value }))
+                  }
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="medecin-tarif">Tarif consultation</Label>
-              <Input
-                id="medecin-tarif"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.tarif_consultation}
-                onChange={(event) =>
-                  setFormData((current) => ({ ...current, tarif_consultation: event.target.value }))
-                }
-              />
-            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="medecin-new-password">Nouveau mot de passe</Label>
+                <Input
+                  id="medecin-new-password"
+                  type="password"
+                  className="h-12 rounded-2xl"
+                  value={passwordData.newPassword}
+                  onChange={(event) =>
+                    setPasswordData((current) => ({ ...current, newPassword: event.target.value }))
+                  }
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="medecin-adresse">Adresse</Label>
-              <Textarea
-                id="medecin-adresse"
-                value={formData.adresse}
-                onChange={(event) => setFormData((current) => ({ ...current, adresse: event.target.value }))}
-                rows={4}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="medecin-confirm-password">Confirmer le mot de passe</Label>
+                <Input
+                  id="medecin-confirm-password"
+                  type="password"
+                  className="h-12 rounded-2xl"
+                  value={passwordData.confirmPassword}
+                  onChange={(event) =>
+                    setPasswordData((current) => ({ ...current, confirmPassword: event.target.value }))
+                  }
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <Button onClick={handleSave} disabled={isSaving || !profile} className="gap-2">
-        <Save className="h-4 w-4" />
-        {isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}
-      </Button>
-    </div>
+        </ProfileSectionCard>
+      }
+    />
   );
 };

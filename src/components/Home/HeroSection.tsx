@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Play, CheckCircle2, ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { floatAnimate, floatTransition, staggerContainer, staggerItem, viewport } from '@/lib/animations';
+import { marketingImages } from '@/lib/marketingImages';
 
 const heroParticles = [
   { top: '14%', left: '8%', duration: 4.5, delay: 0.2 },
@@ -95,23 +96,19 @@ export const HeroSection: React.FC = () => {
 
             <motion.div variants={staggerItem} className="flex flex-col sm:flex-row gap-4 mb-12">
               <Link
-                to="/auth/register"
+                to="/services"
                 className="inline-flex items-center justify-center gap-2 bg-[#3BC1A8] hover:bg-[#249E94] text-white font-semibold px-8 py-4 rounded-full transition-all duration-300 shadow-xl shadow-[#3BC1A8]/30 hover:shadow-2xl hover:scale-105"
               >
                 Explorer Nos Services
                 <ArrowRight className="h-5 w-5" />
               </Link>
-              <a
-                href="#about"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.querySelector('#about')?.scrollIntoView({ behavior: 'smooth' });
-                }}
+              <Link
+                to="/a-propos"
                 className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold px-8 py-4 rounded-full border border-white/20 transition-all duration-300"
               >
                 <Play className="h-5 w-5 fill-white" />
-                Voir la démo
-              </a>
+                À Propos de Santé SN
+              </Link>
             </motion.div>
 
             <motion.div variants={staggerItem} className="flex flex-wrap gap-4">
@@ -156,8 +153,8 @@ export const HeroSection: React.FC = () => {
             >
               <div className="w-[440px] h-[440px] rounded-full overflow-hidden border-8 border-white/10 shadow-2xl">
                 <img
-                  src="https://images.pexels.com/photos/5452291/pexels-photo-5452291.jpeg?auto=compress&cs=tinysrgb&w=900"
-                  alt="Médecin qualifié"
+                  src={marketingImages.homeHero}
+                  alt="Medecin noire souriante en blouse avec stethoscope"
                   className="w-full h-full object-cover object-center"
                 />
               </div>

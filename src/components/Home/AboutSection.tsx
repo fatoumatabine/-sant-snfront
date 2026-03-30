@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { CheckCircle2, Activity, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fadeUp, slideLeft, slideRight, staggerContainer, staggerItem, viewport } from '@/lib/animations';
+import { marketingImages } from '@/lib/marketingImages';
 
 const checkItems = [
   'Services Ambulanciers',
@@ -28,8 +29,8 @@ export const AboutSection: React.FC = () => {
           >
             <div className="relative rounded-3xl overflow-hidden shadow-2xl">
               <img
-                src="https://images.pexels.com/photos/7195087/pexels-photo-7195087.jpeg?auto=compress&cs=tinysrgb&w=900"
-                alt="Services médicaux Santé SN"
+                src={marketingImages.homeAbout}
+                alt="Medecin accompagnant une mere et son enfant"
                 className="w-full h-[500px] object-cover"
               />
             </div>
@@ -104,7 +105,7 @@ export const AboutSection: React.FC = () => {
 
             <motion.div whileHover={{ scale: 1.04 }} transition={{ type: 'spring', stiffness: 300, damping: 18 }}>
               <Link
-                to="/auth/register"
+                to="/a-propos"
                 className="inline-flex items-center gap-2 bg-[#005461] hover:bg-[#004050] text-white font-semibold px-8 py-4 rounded-full transition-all duration-300 shadow-lg shadow-[#005461]/20 hover:shadow-xl"
               >
                 Découvrir Plus

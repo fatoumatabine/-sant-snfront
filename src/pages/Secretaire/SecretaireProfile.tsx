@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { BadgeCheck, Mail, ShieldCheck, User } from 'lucide-react';
+import { ArrowRight, Mail, Palette, ShieldCheck, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ProfileSectionCard, ProfileShell } from '@/components/profile/ProfileShell';
-import { useAuthStore } from '@/store/authStore';
-import { apiService } from '@/services/api';
 import { API_ENDPOINTS } from '@/config/api-endpoints';
-import { toast } from 'sonner';
 import { joinFullName, splitFullName } from '@/lib/user-name';
+import { apiService } from '@/services/api';
+import { useAuthStore } from '@/store/authStore';
 
 type AuthMeResponse = {
   id: string;
@@ -18,20 +20,18 @@ type AuthMeResponse = {
   avatarUrl?: string | null;
 };
 
-export const AdminProfile: React.FC = () => {
+export const SecretaireProfile: React.FC = () => {
   const { user, setUser, logout } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
-
   const [profileData, setProfileData] = useState({
     firstName: user?.prenom || '',
     lastName: user?.nom || '',
     email: user?.email || '',
     avatarUrl: user?.avatar || null,
   });
-
-  const [securityData, setSecurityData] = useState({
+  const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -51,17 +51,17 @@ export const AdminProfile: React.FC = () => {
           email: data.email || user?.email || '',
           avatarUrl: data.avatarUrl || user?.avatar || null,
         });
-      } catch {
-        toast.error('Impossible de charger le profil');
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Impossible de charger le profil');
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadProfile();
-  }, [user?.email, user?.nom, user?.prenom]);
+    void loadProfile();
+  }, [user?.avatar, user?.email, user?.nom, user?.prenom]);
 
-  const handleSaveChanges = async () => {
+  const handleSaveProfile = async () => {
     if (!profileData.firstName.trim() || !profileData.lastName.trim() || !profileData.email.trim()) {
       toast.error('Prénom, nom et email sont obligatoires');
       return;
@@ -69,6 +69,7 @@ export const AdminProfile: React.FC = () => {
 
     try {
       setIsSavingProfile(true);
+
       const payload = {
         firstName: profileData.firstName.trim(),
         lastName: profileData.lastName.trim(),
@@ -90,7 +91,7 @@ export const AdminProfile: React.FC = () => {
         });
       }
 
-      toast.success('Profil mis à jour avec succès');
+      toast.success('Profil secrétaire mis à jour');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erreur lors de la mise à jour');
     } finally {
@@ -99,17 +100,17 @@ export const AdminProfile: React.FC = () => {
   };
 
   const handlePasswordChange = async () => {
-    if (!securityData.currentPassword || !securityData.newPassword || !securityData.confirmPassword) {
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
       toast.error('Tous les champs mot de passe sont obligatoires');
       return;
     }
 
-    if (securityData.newPassword !== securityData.confirmPassword) {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error('Les mots de passe ne correspondent pas');
       return;
     }
 
-    if (securityData.newPassword.length < 8) {
+    if (passwordData.newPassword.length < 8) {
       toast.error('Le nouveau mot de passe doit contenir au moins 8 caractères');
       return;
     }
@@ -117,12 +118,16 @@ export const AdminProfile: React.FC = () => {
     try {
       setIsSavingPassword(true);
       await apiService.put(API_ENDPOINTS.auth.changePassword, {
-        currentPassword: securityData.currentPassword,
-        newPassword: securityData.newPassword,
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
       });
 
-      setSecurityData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      toast.success('Mot de passe modifié avec succès');
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      toast.success('Mot de passe mis à jour');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erreur lors du changement de mot de passe');
     } finally {
@@ -137,36 +142,41 @@ export const AdminProfile: React.FC = () => {
 
   return (
     <ProfileShell
-      role="admin"
-      title="Profil administrateur"
-      description="Gardez vos informations de compte à jour et sécurisez l’accès à l’espace d’administration."
-      name={joinFullName(profileData.firstName, profileData.lastName) || 'Administrateur'}
+      role="secretaire"
+      title="Profil secrétariat"
+      description="Personnalisez votre identité de compte et gardez un accès sécurisé à votre espace de gestion des rendez-vous."
+      name={joinFullName(profileData.firstName, profileData.lastName) || 'Secrétaire'}
       email={profileData.email || user?.email || ''}
       avatar={profileData.avatarUrl || user?.avatar || null}
       onAvatarChange={(value) => setProfileData((prev) => ({ ...prev, avatarUrl: value }))}
       avatarDisabled={isSavingProfile}
       onLogout={handleLogout}
       heroStats={[
-        { label: 'Accès', value: 'Administration' },
+        { label: 'Rôle', value: 'Secrétariat' },
         { label: 'Photo', value: profileData.avatarUrl ? 'Ajoutée' : 'À compléter' },
-        { label: 'Sécurité', value: 'Compte protégé' },
+        { label: 'Préférences', value: 'Disponibles' },
       ]}
       summaryItems={[
         { icon: Mail, label: 'Email', value: profileData.email || '-' },
-        { icon: BadgeCheck, label: 'Rôle', value: 'Administrateur' },
-        { icon: ShieldCheck, label: 'Statut', value: 'Accès complet' },
+        { icon: ShieldCheck, label: 'Accès', value: 'Gestion des rendez-vous' },
+        { icon: Palette, label: 'Personnalisation', value: 'Thème et langue' },
       ]}
       helperNote={
-        <p>
-          Cette photo est reprise dans la navigation et facilite l’identification visuelle dans tout l’espace
-          d’administration.
-        </p>
+        <div className="space-y-3">
+          <p>Les réglages d’apparence, de langue et d’interface restent disponibles dans la page paramètres.</p>
+          <Button asChild variant="outline" className="w-full rounded-2xl">
+            <Link to="/secretaire/parametres">
+              Ouvrir les paramètres
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       }
       personalTab={
         <ProfileSectionCard
           icon={User}
           title="Informations du compte"
-          description="Modifiez votre identité et votre photo sans quitter l’espace d’administration."
+          description="Mettez à jour votre identité visible dans l’interface de secrétariat et dans la navigation."
           footer={
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button
@@ -184,7 +194,7 @@ export const AdminProfile: React.FC = () => {
               >
                 Annuler
               </Button>
-              <Button className="flex-1 rounded-2xl" onClick={handleSaveChanges} disabled={isSavingProfile}>
+              <Button className="flex-1 rounded-2xl" disabled={isSavingProfile} onClick={handleSaveProfile}>
                 {isSavingProfile ? 'Enregistrement...' : 'Enregistrer les modifications'}
               </Button>
             </div>
@@ -195,31 +205,31 @@ export const AdminProfile: React.FC = () => {
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="admin-firstName">Prénom</Label>
+                <Label htmlFor="secretaire-first-name">Prénom</Label>
                 <Input
-                  id="admin-firstName"
+                  id="secretaire-first-name"
                   className="h-12 rounded-2xl"
                   value={profileData.firstName}
-                  onChange={(e) => setProfileData((prev) => ({ ...prev, firstName: e.target.value }))}
+                  onChange={(event) => setProfileData((prev) => ({ ...prev, firstName: event.target.value }))}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="admin-lastName">Nom</Label>
+                <Label htmlFor="secretaire-last-name">Nom</Label>
                 <Input
-                  id="admin-lastName"
+                  id="secretaire-last-name"
                   className="h-12 rounded-2xl"
                   value={profileData.lastName}
-                  onChange={(e) => setProfileData((prev) => ({ ...prev, lastName: e.target.value }))}
+                  onChange={(event) => setProfileData((prev) => ({ ...prev, lastName: event.target.value }))}
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="admin-email">Email</Label>
+                <Label htmlFor="secretaire-email">Email</Label>
                 <Input
-                  id="admin-email"
+                  id="secretaire-email"
                   type="email"
                   className="h-12 rounded-2xl"
                   value={profileData.email}
-                  onChange={(e) => setProfileData((prev) => ({ ...prev, email: e.target.value }))}
+                  onChange={(event) => setProfileData((prev) => ({ ...prev, email: event.target.value }))}
                 />
               </div>
             </div>
@@ -229,23 +239,25 @@ export const AdminProfile: React.FC = () => {
       securityTab={
         <ProfileSectionCard
           icon={ShieldCheck}
-          title="Sécurité et accès"
-          description="Utilisez votre mot de passe actuel pour confirmer toute mise à jour sensible."
+          title="Sécurité"
+          description="Protégez votre accès au secrétariat avec un mot de passe robuste et mis à jour."
           footer={
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button
                 variant="outline"
-                onClick={() => setSecurityData({ currentPassword: '', newPassword: '', confirmPassword: '' })}
                 className="flex-1 rounded-2xl"
                 disabled={isSavingPassword}
+                onClick={() =>
+                  setPasswordData({
+                    currentPassword: '',
+                    newPassword: '',
+                    confirmPassword: '',
+                  })
+                }
               >
                 Annuler
               </Button>
-              <Button
-                className="flex-1 rounded-2xl"
-                onClick={handlePasswordChange}
-                disabled={isSavingPassword}
-              >
+              <Button className="flex-1 rounded-2xl" disabled={isSavingPassword} onClick={handlePasswordChange}>
                 {isSavingPassword ? 'Mise à jour...' : 'Mettre à jour le mot de passe'}
               </Button>
             </div>
@@ -253,34 +265,40 @@ export const AdminProfile: React.FC = () => {
         >
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="admin-current-password">Mot de passe actuel</Label>
+              <Label htmlFor="secretaire-current-password">Mot de passe actuel</Label>
               <Input
-                id="admin-current-password"
+                id="secretaire-current-password"
                 type="password"
                 className="h-12 rounded-2xl"
-                value={securityData.currentPassword}
-                onChange={(e) => setSecurityData((prev) => ({ ...prev, currentPassword: e.target.value }))}
+                value={passwordData.currentPassword}
+                onChange={(event) =>
+                  setPasswordData((prev) => ({ ...prev, currentPassword: event.target.value }))
+                }
               />
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="admin-new-password">Nouveau mot de passe</Label>
+                <Label htmlFor="secretaire-new-password">Nouveau mot de passe</Label>
                 <Input
-                  id="admin-new-password"
+                  id="secretaire-new-password"
                   type="password"
                   className="h-12 rounded-2xl"
-                  value={securityData.newPassword}
-                  onChange={(e) => setSecurityData((prev) => ({ ...prev, newPassword: e.target.value }))}
+                  value={passwordData.newPassword}
+                  onChange={(event) =>
+                    setPasswordData((prev) => ({ ...prev, newPassword: event.target.value }))
+                  }
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="admin-confirm-password">Confirmer le mot de passe</Label>
+                <Label htmlFor="secretaire-confirm-password">Confirmer le mot de passe</Label>
                 <Input
-                  id="admin-confirm-password"
+                  id="secretaire-confirm-password"
                   type="password"
                   className="h-12 rounded-2xl"
-                  value={securityData.confirmPassword}
-                  onChange={(e) => setSecurityData((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                  value={passwordData.confirmPassword}
+                  onChange={(event) =>
+                    setPasswordData((prev) => ({ ...prev, confirmPassword: event.target.value }))
+                  }
                 />
               </div>
             </div>

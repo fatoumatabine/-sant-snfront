@@ -110,63 +110,6 @@ export const PatientRendezVous: React.FC = () => {
     },
   });
 
-  const initMutation = useMutation({
-    mutationFn: async ({ rendezVousId, methode }: { rendezVousId: number; methode: string }) =>
-      apiService.post('/paiements/initier', { rendezVousId, methode }),
-  });
-
-  const payMutation = useMutation({
-    mutationFn: async ({
-      paiementId,
-      confirmationCode,
-    }: {
-      paiementId: number;
-      confirmationCode?: string;
-    }) => apiService.post(`/paiements/${paiementId}/payer`, confirmationCode ? { confirmationCode } : {}),
-    onSuccess: () => {
-      toast.success('Paiement confirmé');
-      refetch();
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Paiement refusé');
-    },
-  });
-
-  const handlePay = async (rdv: PatientRdvItem) => {
-    const onlineMethods = ['mobile_money', 'wave', 'orange_money', 'carte_bancaire'];
-    const methode = window.prompt(
-      'Méthode de paiement (mobile_money, wave, orange_money, carte_bancaire, especes, virement)',
-      'mobile_money'
-    );
-    if (!methode) return;
-    const isOnlineMethod = onlineMethods.includes(methode);
-
-    const init: any = await initMutation.mutateAsync({ rendezVousId: rdv.id, methode });
-    const initData = init?.data || init;
-    const payload = initData?.data || initData;
-    const paiementId = payload?.id;
-    const checkoutUrl = payload?.paymentSession?.checkoutUrl;
-
-    if (!paiementId) {
-      toast.error('Impossible d’initialiser le paiement');
-      return;
-    }
-
-    if (isOnlineMethod) {
-      if (!checkoutUrl) {
-        toast.error('La session de paiement en ligne est indisponible. Réessayez.');
-        return;
-      }
-      window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
-      toast.success('Page de paiement ouverte. Revenez ensuite pour vérifier le statut.');
-      return;
-    }
-
-    const code = window.prompt('Entrez le code de confirmation (6 chiffres)', '123456');
-    if (!code) return;
-    await payMutation.mutateAsync({ paiementId: Number(paiementId), confirmationCode: code });
-  };
-
   const filteredRdv = useMemo(() => {
     const sorted = [...rendezVous].sort(
       (a, b) => new Date(`${b.date}T${b.heure}`).getTime() - new Date(`${a.date}T${a.heure}`).getTime()
@@ -382,9 +325,11 @@ export const PatientRendezVous: React.FC = () => {
                         </div>
                       )}
                       {rdv.type === 'en_ligne' && (!rdv.consultation || rdv.consultation.statut !== 'en_cours') && (
-                        <Button size="sm" variant="outline" disabled>
-                          En attente du médecin
-                        </Button>
+                        <Link to="/patient/video-call">
+                          <Button size="sm" variant="outline">
+                            Salle d’attente
+                          </Button>
+                        </Link>
                       )}
                       {rdv.type === 'prestation' && (
                         <Link to="/patient/paiements">
@@ -398,15 +343,12 @@ export const PatientRendezVous: React.FC = () => {
                   )}
 
                   {rdv.statut === 'confirme' && (
-                    <Button
-                      size="sm"
-                      onClick={() => handlePay(rdv)}
-                      disabled={initMutation.isPending || payMutation.isPending}
-                      className="gap-1"
-                    >
-                      <CreditCard className="h-4 w-4" />
-                      Payer maintenant
-                    </Button>
+                    <Link to={`/patient/paiements/rendez-vous/${rdv.id}`}>
+                      <Button size="sm" className="gap-1">
+                        <CreditCard className="h-4 w-4" />
+                        Payer maintenant
+                      </Button>
+                    </Link>
                   )}
 
                   {(rdv.statut === 'en_attente' || rdv.statut === 'confirme') && (

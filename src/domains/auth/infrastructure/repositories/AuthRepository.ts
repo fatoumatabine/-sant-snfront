@@ -2,8 +2,7 @@
 
 import { IAuthRepository, LoginData, RegisterData } from '../../domain/repositories/IAuthRepository';
 import { Session, User } from '../../domain/models/User';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+import { API_BASE_URL, fetchWithTimeout, toApiNetworkError } from '@/lib/api-network';
 
 // Helper for making API calls
 async function apiRequest<T>(
@@ -18,10 +17,18 @@ async function apiRequest<T>(
     ...options.headers,
   };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  const url = `${API_BASE_URL}${endpoint}`;
+  let response: Response;
+
+  try {
+    response = await fetchWithTimeout(url, {
+      ...options,
+      headers,
+    });
+  } catch (error) {
+    console.error('[Auth API Network Error]', { url, error });
+    throw toApiNetworkError(error, url);
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'An error occurred' }));

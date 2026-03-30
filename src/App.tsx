@@ -15,6 +15,11 @@ import '@/i18n/config';
 
 // Pages publiques
 import HomePage from "./pages/HomePage";
+import { MarketingLayout } from "./components/Home/MarketingLayout";
+import ServicesPage from "./pages/Public/ServicesPage";
+import DoctorsPage from "./pages/Public/DoctorsPage";
+import AboutPage from "./pages/Public/AboutPage";
+import ContactPage from "./pages/Public/ContactPage";
 import { LoginPage } from "./pages/Auth/LoginPage";
 import { RegisterPage } from "./pages/Auth/RegisterPage";
 import { ForgotPasswordPage } from "./pages/Auth/ForgotPasswordPage";
@@ -26,6 +31,7 @@ import { PatientRendezVous } from "./pages/Patient/PatientRendezVous";
 import { PatientDemanderRDV } from "./pages/Patient/PatientDemanderRDV";
 import { PatientConsultations } from "./pages/Patient/PatientConsultations";
 import { PatientPaiements } from "./pages/Patient/PatientPaiements";
+import { PatientPaiementCheckout } from "./pages/Patient/PatientPaiementCheckout";
 import { PatientProfile } from "./pages/Patient/PatientProfile";
 import { PatientMedicalRecord } from "./pages/Patient/PatientMedicalRecord";
 import { VideoCall } from "./pages/Patient/VideoCall";
@@ -60,6 +66,7 @@ import { SecretaireRendezVousEnCours } from "./pages/Secretaire/SecretaireRendez
 import { SecretaireAgenda } from "./pages/Secretaire/SecretaireAgenda";
 import { SecretairePaiements } from "./pages/Secretaire/SecretairePaiements";
 import { SecretaireParametres } from "./pages/Secretaire/SecretaireParametres";
+import { SecretaireProfile } from "./pages/Secretaire/SecretaireProfile";
 import { SecretaireRapports } from "./pages/Secretaire/SecretaireRapports";
 import { NotificationsPage } from "./pages/Common/NotificationsPage";
 import { WebChatPage } from "./pages/Common/WebChatPage";
@@ -137,7 +144,13 @@ const App = () => {
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
           {/* Routes publiques */}
-          <Route path="/" element={<HomePage />} />
+          <Route element={<MarketingLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/medecins" element={<DoctorsPage />} />
+            <Route path="/a-propos" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+          </Route>
           
           {/* Routes Auth */}
            <Route element={<AuthLayout />}>
@@ -155,6 +168,7 @@ const App = () => {
             <Route path="/patient/consultations" element={<PatientConsultations />} />
             <Route path="/patient/dossier-medical" element={<PatientMedicalRecord />} />
             <Route path="/patient/paiements" element={<PatientPaiements />} />
+            <Route path="/patient/paiements/rendez-vous/:rendezVousId" element={<PatientPaiementCheckout />} />
             <Route path="/patient/notifications" element={<NotificationsPage />} />
             <Route path="/patient/chat" element={<WebChatPage />} />
             <Route path="/patient/ia-evaluation" element={<IAEvaluation />} />
@@ -188,7 +202,7 @@ const App = () => {
             <Route path="/secretaire/paiements" element={<SecretairePaiements />} />
             <Route path="/secretaire/notifications" element={<NotificationsPage />} />
             <Route path="/secretaire/chat" element={<WebChatPage />} />
-            <Route path="/secretaire/profile" element={<SecretaireParametres />} />
+            <Route path="/secretaire/profile" element={<SecretaireProfile />} />
             <Route path="/secretaire/parametres" element={<SecretaireParametres />} />
             <Route path="/secretaire/rapports" element={<SecretaireRapports />} />
           </Route>
