@@ -1,0 +1,119 @@
+<view class="tasks-container">
+  <!-- Header -->
+  <view class="tasks-header">
+    <view class="header-content">
+      <view class="header-title">Mes Tâches</view>
+      <view class="header-subtitle">{{ getFilteredTasks().length }} tâche(s)</view>
+    </view>
+    <button class="btn-logout" bindtap="logout">Déconnexion</button>
+  </view>
+
+  <!-- Messages -->
+  <view wx:if="{{ errorMessage }}" class="alert alert-danger">
+    {{ errorMessage }}
+  </view>
+
+  <view wx:if="{{ successMessage }}" class="alert alert-success">
+    {{ successMessage }}
+  </view>
+
+  <!-- Bouton Ajouter -->
+  <view class="add-button-wrapper">
+    <button
+      class="btn btn-primary btn-block add-button"
+      bindtap="toggleForm"
+    >
+      {{ showForm ? '✕ Annuler' : '+ Ajouter une tâche' }}
+    </button>
+  </view>
+
+  <!-- Formulaire d'ajout -->
+  <view wx:if="{{ showForm }}" class="card form-card">
+    <view class="form-group">
+      <label class="form-label">Titre de la tâche</label>
+      <input
+        class="form-input"
+        type="text"
+        placeholder="Entrez le titre de votre tâche"
+        value="{{ newTask.title }}"
+        bindinput="onTitleInput"
+        placeholder-style="color: #ccc;"
+      />
+    </view>
+
+    <view class="form-group">
+      <label class="form-label">Description (optionnel)</label>
+      <textarea
+        class="form-textarea"
+        placeholder="Ajoutez plus de détails..."
+        value="{{ newTask.description }}"
+        bindinput="onDescriptionInput"
+        placeholder-style="color: #ccc;"
+      ></textarea>
+    </view>
+
+    <view class="form-group">
+      <label class="form-label">Date limite (optionnel)</label>
+      <input
+        class="form-input"
+        type="datetime-local"
+        value="{{ newTask.dueDate }}"
+        bindinput="onDateInput"
+        placeholder-style="color: #ccc;"
+      />
+    </view>
+
+    <button
+      class="btn btn-success btn-block"
+      bindtap="createTask"
+      disabled="{{ loading }}"
+    >
+      {{ loading ? 'Création...' : 'Créer la tâche' }}
+    </button>
+  </view>
+
+  <!-- Filtres -->
+  <view class="filter-tabs">
+    <button
+      class="filter-tab {{ filterStatus === 'all' ? 'active' : '' }}"
+      data-status="all"
+      bindtap="filterTasks"
+    >
+      Tout
+    </button>
+    <button
+      class="filter-tab {{ filterStatus === 'pending' ? 'active' : '' }}"
+      data-status="pending"
+      bindtap="filterTasks"
+    >
+      En attente
+    </button>
+    <button
+      class="filter-tab {{ filterStatus === 'completed' ? 'active' : '' }}"
+      data-status="completed"
+      bindtap="filterTasks"
+    >
+      Complétées
+    </button>
+  </view>
+
+  <!-- Liste des tâches -->
+  <view wx:if="{{ getFilteredTasks().length > 0 }}" class="tasks-list">
+    <task-item
+      wx:for="{{ getFilteredTasks() }}"
+      wx:key="id"
+      task="{{ item }}"
+      bind:toggle-status="toggleTaskStatus"
+      bind:delete="deleteTask"
+    ></task-item>
+  </view>
+
+  <!-- État vide -->
+  <view wx:else class="empty-state">
+    <view class="empty-icon">📝</view>
+    <view class="empty-text">Aucune tâche ici</view>
+    <view class="empty-subtext">
+      Commencez par ajouter une nouvelle tâche
+    </view>
+  </view>
+</view>

@@ -1,0 +1,36 @@
+@startuml SANTE_SN_Sequence_Video_Call
+skinparam backgroundColor #FEFEFE
+
+title SANTE_SN - Sequence (Teleconsultation video via Jitsi)
+
+actor Patient as patient
+actor "Medecin" as medecin
+participant "Web Frontend\n(React)" as web
+participant "API Consultation\n(Express)" as api
+participant "Jitsi Meet\n(VIDEO_CALL_BASE_URL)" as jitsi
+
+== Medecin demarre la session ==
+medecin -> web: Ouvre /medecin/video-call?consultationId=ID
+web -> api: POST /api/v1/consultations/ID/video-session/start\n(Authorization: Bearer JWT)
+api -> api: Verifier JWT + role\nVerifier acces (ownership)
+api -> api: (si besoin) statut consultation -> en_cours
+api --> web: { room, joinUrl }
+web -> jitsi: Charge joinUrl dans iframe / nouvel onglet
+
+== Patient rejoint la session ==
+patient -> web: Ouvre /patient/video-call?consultationId=ID
+web -> api: GET /api/v1/consultations/ID/video-session\n(Authorization: Bearer JWT)
+api -> api: Verifier JWT + role\nVerifier acces (ownership)
+api -> api: Verifier consultation.statut == en_cours
+api --> web: { room, joinUrl }
+web -> jitsi: Charge joinUrl dans iframe / nouvel onglet
+
+== Presence (polling) ==
+loop Toutes les 5s
+  web -> api: POST /api/v1/consultations/ID/video-session/ping
+  api -> api: Upsert ConsultationPresence (lastSeenAt)
+  web -> api: GET /api/v1/consultations/ID/video-session/presence
+  api --> web: { patientOnline, medecinOnline, timeoutSeconds }
+end
+
+@enduml

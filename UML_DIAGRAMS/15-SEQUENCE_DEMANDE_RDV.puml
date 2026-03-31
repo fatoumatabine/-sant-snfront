@@ -1,0 +1,69 @@
+@startuml SANTE_SN_Sequence_Demande_RDV
+skinparam backgroundColor #FEFEFE
+
+title SANTE_SN - Diagramme de Séquence (Demande & Validation d’un RDV)
+
+actor Patient as patient
+actor "Secrétaire" as secretaire
+
+participant "Frontend Patient\n(React)" as front_patient
+participant "Frontend Secrétaire\n(React)" as front_sec
+
+participant "API SANTE SN\n(Express)" as api
+participant "RendezVous Service" as rdv
+database "PostgreSQL\n(Prisma)" as db
+
+== Consulter les créneaux ==
+patient -> front_patient: Choisir médecin + date
+front_patient -> api: GET /api/v1/rendez-vous/creneaux-disponibles
+api -> rdv: Calculer créneaux
+rdv -> db: SELECT RDV existants + créneaux
+db --> rdv: Résultats
+rdv --> api: Liste créneaux
+api --> front_patient: 200 {créneaux}
+
+== Créer la demande ==
+patient -> front_patient: Choisir heure + motif
+front_patient -> api: POST /api/v1/rendez-vous
+api -> rdv: Créer RDV (statut=en_attente)
+rdv -> db: INSERT RendezVous
+db --> api: RDV créé
+api --> front_patient: 201 {rdv, statut=en_attente}
+
+== Validation par la secrétaire ==
+secretaire -> front_sec: Ouvrir demandes
+front_sec -> api: GET /api/v1/secretaire/dashboard/demandes
+api -> db: SELECT RendezVous WHERE statut=en_attente\n(scopé au médecin assigné)
+db --> api: Liste demandes
+api --> front_sec: 200 {demandes}
+
+secretaire -> front_sec: Vérifier disponibilité
+front_sec -> api: GET /api/v1/secretaire/demandes/{id}/disponibilite
+api -> rdv: Vérifier conflits
+rdv -> db: SELECT RDV du médecin (date/heure)
+db --> rdv: Conflits
+rdv --> api: disponible=true/false
+api --> front_sec: Résultat
+
+alt disponible=true
+  secretaire -> front_sec: Approuver
+  front_sec -> api: POST /api/v1/secretaire/demandes/{id}/approuver
+  api -> rdv: Transition en_attente -> confirme
+  rdv -> db: UPDATE RendezVous.statut=confirme
+  rdv -> db: INSERT RendezVousTransitionLog (en_attente -> confirme)
+  rdv -> db: INSERT Notification (patient)
+  db --> api: OK
+  api --> front_sec: 200 {rdv confirmé}
+else disponible=false
+  secretaire -> front_sec: Refuser (raison)
+  front_sec -> api: POST /api/v1/secretaire/demandes/{id}/refuser
+  api -> rdv: Transition en_attente -> annule
+  rdv -> db: UPDATE RendezVous.statut=annule\nraison_refus=...
+  rdv -> db: INSERT RendezVousTransitionLog (en_attente -> annule)
+  rdv -> db: INSERT Notification (patient)
+  db --> api: OK
+  api --> front_sec: 200 {rdv refusé}
+end
+
+@enduml
+

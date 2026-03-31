@@ -1,0 +1,58 @@
+@startuml SANTE_SN_Use_Cases_Medecin
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F4F4F4
+
+title SANTE SN - Cas d'Usage (Medecin)
+
+left to right direction
+
+:Médecin: as medecin
+
+rectangle "SANTE SN" {
+  rectangle "Authentification" {
+    usecase "Se connecter" as UC_M_Login
+    usecase "Recuperer mot de passe" as UC_M_Recovery
+  }
+
+  rectangle "Agenda / Creneaux" {
+    usecase "Gerer creneaux disponibles" as UC_M_ManageSlots
+    usecase "Consulter planning rendez-vous" as UC_M_ViewAppointments
+  }
+
+  rectangle "Consultation" {
+    usecase "Demarrer consultation" as UC_M_StartConsultation
+    usecase "Demarrer appel video" as UC_M_StartVideo
+    usecase "Saisir constantes / diagnostic" as UC_M_RecordMedicalData
+    usecase "Prescrire ordonnance" as UC_M_PrescribeOrdonnance
+    usecase "Consulter historique consultations" as UC_M_ViewConsultations
+  }
+
+  rectangle "Communication" {
+    usecase "Envoyer message (chat)" as UC_M_SendMessage
+    usecase "Recevoir message (chat)" as UC_M_ReceiveMessage
+    usecase "Lire notifications" as UC_M_Notifications
+  }
+}
+
+medecin --> UC_M_Login
+medecin --> UC_M_Recovery
+
+medecin --> UC_M_ManageSlots
+medecin --> UC_M_ViewAppointments
+
+medecin --> UC_M_StartConsultation
+medecin --> UC_M_StartVideo
+medecin --> UC_M_RecordMedicalData
+medecin --> UC_M_PrescribeOrdonnance
+medecin --> UC_M_ViewConsultations
+
+medecin --> UC_M_SendMessage
+medecin --> UC_M_ReceiveMessage
+medecin --> UC_M_Notifications
+
+UC_M_StartVideo .> UC_M_StartConsultation : <<include>>
+UC_M_PrescribeOrdonnance .> UC_M_RecordMedicalData : <<extend>>
+UC_M_StartConsultation .> UC_M_Notifications : <<extend>>
+
+@enduml
+

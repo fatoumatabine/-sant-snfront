@@ -1,0 +1,44 @@
+@startuml SANTE_SN_Use_Cases_Admin
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F4F4F4
+
+title SANTE SN - Cas d'Usage (Administrateur)
+
+left to right direction
+
+:Admin: as admin
+
+rectangle "SANTE SN" {
+  rectangle "Authentification" {
+    usecase "Se connecter" as UC_A_Login
+    usecase "Recuperer mot de passe" as UC_A_Recovery
+  }
+
+  rectangle "Administration" {
+    usecase "Gerer utilisateurs (CRUD)" as UC_A_ManageUsers
+    usecase "Archiver / restaurer comptes" as UC_A_ArchiveRestore
+    usecase "Gerer parametres" as UC_A_Settings
+    usecase "Consulter statistiques" as UC_A_Stats
+  }
+
+  rectangle "Supervision" {
+    usecase "Suivre paiements" as UC_A_PaymentTracking
+    usecase "Consulter logs / audits" as UC_A_Audit
+  }
+}
+
+admin --> UC_A_Login
+admin --> UC_A_Recovery
+
+admin --> UC_A_ManageUsers
+admin --> UC_A_ArchiveRestore
+admin --> UC_A_Settings
+admin --> UC_A_Stats
+
+admin --> UC_A_PaymentTracking
+admin --> UC_A_Audit
+
+UC_A_ManageUsers .> UC_A_ArchiveRestore : <<include>>
+
+@enduml
+

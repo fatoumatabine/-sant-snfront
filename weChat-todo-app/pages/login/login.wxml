@@ -1,0 +1,64 @@
+<view class="login-container">
+  <!-- Logo et Titre -->
+  <view class="login-header">
+    <view class="login-title">Ma To-Do</view>
+    <view class="login-subtitle">{{ isLogin ? 'Connexion' : 'Créer un compte' }}</view>
+  </view>
+
+  <!-- Formulaire -->
+  <view class="login-form">
+    <!-- Message d'erreur -->
+    <view wx:if="{{ errorMessage }}" class="alert alert-danger">
+      {{ errorMessage }}
+    </view>
+
+    <!-- Champ Email -->
+    <view class="form-group">
+      <label class="form-label">Email</label>
+      <input
+        class="form-input"
+        type="email"
+        placeholder="exemple@email.com"
+        value="{{ email }}"
+        bindinput="onEmailInput"
+        placeholder-style="color: #ccc;"
+      />
+    </view>
+
+    <!-- Champ Mot de passe -->
+    <view class="form-group">
+      <label class="form-label">Mot de passe</label>
+      <input
+        class="form-input"
+        type="password"
+        placeholder="Entrez votre mot de passe"
+        value="{{ password }}"
+        bindinput="onPasswordInput"
+        placeholder-style="color: #ccc;"
+      />
+    </view>
+
+    <!-- Bouton Login/Register -->
+    <button
+      class="btn btn-primary btn-block"
+      bindtap="{{ isLogin ? 'onLogin' : 'onRegister' }}"
+      disabled="{{ loading }}"
+      style="margin-bottom: 15px;"
+    >
+      {{ loading ? 'Chargement...' : (isLogin ? 'Se connecter' : 'S\'inscrire') }}
+    </button>
+
+    <!-- Lien Basculer -->
+    <view class="login-toggle">
+      <text>{{ isLogin ? 'Pas encore de compte?' : 'Vous avez un compte?' }}</text>
+      <text class="toggle-link" bindtap="toggleMode">
+        {{ isLogin ? 'S\'inscrire' : 'Se connecter' }}
+      </text>
+    </view>
+  </view>
+
+  <!-- Info -->
+  <view class="login-info">
+    <text>🔒 Vos données sont sécurisées</text>
+  </view>
+</view>

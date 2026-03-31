@@ -1,0 +1,127 @@
+@startuml SANTE_SN_Use_Cases
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F4F4F4
+
+title SANTE_SN - Diagramme de Cas d'Usage
+
+left to right direction
+
+:Patient: as patient
+:Médecin: as medecin
+:Secrétaire: as secretaire
+:Admin: as admin
+:Système IA: as ia
+
+rectangle "Authentification" {
+  usecase "Se connecter" as UC_Login
+  usecase "S'inscrire" as UC_Register
+  usecase "Récupérer mot de passe" as UC_Recovery
+}
+
+rectangle "Gestion Rendez-vous" {
+  usecase "Prendre rendez-vous" as UC_BookAppointment
+  usecase "Confirmer rendez-vous" as UC_ConfirmAppointment
+  usecase "Annuler rendez-vous" as UC_CancelAppointment
+  usecase "Consulter mes rendez-vous" as UC_ViewAppointments
+  usecase "Gérer créneaux disponibles" as UC_ManageSlots
+}
+
+rectangle "Consultation Médicale" {
+  usecase "Effectuer consultation" as UC_ConsultPatient
+  usecase "Prescrire ordonnance" as UC_PrescribeMedicine
+  usecase "Rédiger diagnostic" as UC_WriteDiagnosis
+  usecase "Suivre consultations" as UC_PatientConsultations
+}
+
+rectangle "Paiements" {
+  usecase "Payer consultation" as UC_PayConsultation
+  usecase "Suivi paiements" as UC_PaymentTracking
+}
+
+rectangle "Triage IA" {
+  usecase "Évaluation triage patient" as UC_TriageIA
+  usecase "Recommander spécialité" as UC_RecommendSpecialty
+}
+
+rectangle "Prestations" {
+  usecase "Demander prestation" as UC_RequestService
+  usecase "Effectuer prestation" as UC_PerformService
+  usecase "Visualiser résultat" as UC_ViewResults
+}
+
+rectangle "Gestion Chat" {
+  usecase "Envoyer message" as UC_SendMessage
+  usecase "Recevoir message" as UC_ReceiveMessage
+}
+
+rectangle "Administration" {
+  usecase "Gérer utilisateurs" as UC_ManageUsers
+  usecase "Gérer paramètres" as UC_ManageSettings
+  usecase "Consulter statistiques" as UC_ViewStats
+}
+
+rectangle "Notifications" {
+  usecase "Recevoir notification" as UC_Notification
+}
+
+' Relations Authentification
+patient --> UC_Login
+patient --> UC_Register
+medecin --> UC_Login
+medecin --> UC_Register
+secretaire --> UC_Login
+admin --> UC_Login
+
+' Relations Rendez-vous
+patient --> UC_BookAppointment
+patient --> UC_ViewAppointments
+patient --> UC_CancelAppointment
+medecin --> UC_ManageSlots
+medecin --> UC_ConfirmAppointment
+secretaire --> UC_ConfirmAppointment
+secretaire --> UC_ManageSlots
+ia --> UC_TriageIA
+
+' Relations Consultation
+medecin --> UC_ConsultPatient
+medecin --> UC_PrescribeMedicine
+medecin --> UC_WriteDiagnosis
+patient --> UC_PatientConsultations
+
+' Relations Paiements
+patient --> UC_PayConsultation
+admin --> UC_PaymentTracking
+secretaire --> UC_PaymentTracking
+
+' Relations Triage IA
+patient --> UC_TriageIA
+ia --> UC_RecommendSpecialty
+
+' Relations Prestations
+patient --> UC_RequestService
+medecin --> UC_PerformService
+patient --> UC_ViewResults
+
+' Relations Chat
+patient --> UC_SendMessage
+medecin --> UC_SendMessage
+patient --> UC_ReceiveMessage
+medecin --> UC_ReceiveMessage
+
+' Relations Administration
+admin --> UC_ManageUsers
+admin --> UC_ManageSettings
+admin --> UC_ViewStats
+
+' Notifications
+patient -.-> UC_Notification
+medecin -.-> UC_Notification
+secretaire -.-> UC_Notification
+
+' Dépendances
+UC_BookAppointment .> UC_TriageIA : inclut
+UC_ConsultPatient .> UC_WriteDiagnosis : inclut
+UC_ConsultPatient .> UC_ReceiveMessage : inclut
+UC_PayConsultation --> UC_Notification : déclenche
+
+@enduml

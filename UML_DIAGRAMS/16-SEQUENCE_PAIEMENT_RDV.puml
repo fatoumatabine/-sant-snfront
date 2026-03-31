@@ -1,0 +1,58 @@
+@startuml SANTE_SN_Sequence_Paiement_RDV
+skinparam backgroundColor #FEFEFE
+
+title SANTE_SN - Diagramme de Séquence (Paiement d’un RDV - PayDunya)
+
+actor Patient as patient
+participant "Frontend Patient\n(React)" as front
+participant "API Paiement\n(Express)" as api
+participant "Paiement Service" as pay
+participant "RendezVous Service" as rdv
+database "PostgreSQL\n(Prisma)" as db
+participant "PayDunya" as paydunya
+
+patient -> front: Cliquer « Payer »
+front -> api: POST /api/v1/paiements/initier\n{ rendezVousId, methode }
+api -> pay: initiate()
+pay -> db: INSERT Paiement (statut=en_attente)
+pay -> paydunya: Create invoice (montant, callbackUrl)
+paydunya --> pay: token + checkoutUrl
+pay -> db: UPDATE Paiement.transactionId=token
+pay --> api: checkoutUrl
+api --> front: 200 {checkoutUrl}
+front --> patient: Redirection checkoutUrl
+
+== Paiement ==
+patient -> paydunya: Payer (Wave/Orange Money/Carte)
+
+alt Webhook PayDunya (confirmation)
+  paydunya -> api: POST /api/v1/paiements/webhooks/paydunya
+  api -> pay: paydunyaWebhook()
+  pay -> db: UPDATE Paiement.statut=paye + date_paiement
+  pay -> rdv: Marquer RDV payé
+  rdv -> db: UPDATE RendezVous.statut=paye
+  rdv -> db: INSERT RendezVousTransitionLog (confirme -> paye)
+  db --> api: OK
+else Confirmation côté application
+  patient -> front: Revenir dans l’application
+  front -> api: POST /api/v1/paiements/{id}/payer
+  api -> pay: Vérifier facture PayDunya
+  pay -> paydunya: Confirm invoice
+  paydunya --> pay: status=completed/failed
+  alt completed
+    pay -> db: UPDATE Paiement.statut=paye
+    rdv -> db: UPDATE RendezVous.statut=paye
+    rdv -> db: INSERT RendezVousTransitionLog (confirme -> paye)
+  else failed
+    pay -> db: UPDATE Paiement.statut=echoue
+  end
+end
+
+== Télécharger la facture ==
+front -> api: GET /api/v1/paiements/{id}/facture/download
+api -> db: Charger Paiement + RendezVous
+db --> api: Fichier facture (PDF/stream)
+api --> front: Téléchargement
+
+@enduml
+

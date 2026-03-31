@@ -1,0 +1,149 @@
+@startuml SANTE_SN_Sequence_Diagram
+skinparam backgroundColor #FEFEFE
+
+title SANTE_SN - Diagramme de Sequence (Scenario: RDV -> Paiement -> Teleconsultation)
+
+actor Patient as patient
+actor "Secretaire" as secretaire
+actor "Medecin" as medecin
+
+participant "Frontend Patient\n(React)" as front_patient
+participant "Frontend Secretaire\n(React)" as front_sec
+participant "Frontend Medecin\n(React)" as front_med
+
+participant "API SANTE SN\n(Express)" as api
+participant "Auth Service" as auth
+participant "RendezVous Service" as rdv
+participant "Paiement Service" as pay
+participant "Consultation Service" as consul
+participant "Ordonnance Service" as ord
+database "PostgreSQL\n(Prisma)" as db
+participant "PayDunya" as paydunya
+participant "Jitsi Meet" as jitsi
+
+== Authentification ==
+patient -> front_patient: Saisit email + mot de passe
+front_patient -> api: POST /api/v1/auth/login
+api -> auth: Verifier identifiants
+auth -> db: Charger user + profils
+db --> auth: user + patientId
+auth --> api: accessToken + refreshToken
+api --> front_patient: Session + tokens
+front_patient --> patient: Redirection dashboard patient
+
+== (Optionnel) Triage ==
+patient -> front_patient: Remplir questionnaire
+front_patient -> api: POST /api/v1/patient/triage-evaluations
+api -> db: INSERT PatientTriageEvaluation
+db --> api: OK
+api --> front_patient: Niveau + specialite conseillee
+
+== Demande de rendez-vous ==
+patient -> front_patient: Choisir medecin + date
+front_patient -> api: GET /api/v1/rendez-vous/creneaux-disponibles
+api -> rdv: Calculer creneaux
+rdv -> db: Lire RDV existants
+db --> rdv: Heures occupees
+rdv --> api: Liste creneaux
+api --> front_patient: Creneaux disponibles
+
+patient -> front_patient: Choisir heure + valider
+front_patient -> api: POST /api/v1/rendez-vous
+api -> rdv: Creer RDV (en_attente)
+rdv -> db: INSERT RendezVous
+db --> api: RDV cree
+api --> front_patient: RDV cree (statut=en_attente)
+
+== Validation secretaire ==
+secretaire -> front_sec: Ouvrir demandes
+front_sec -> api: GET /api/v1/secretaire/dashboard/demandes
+api -> db: SELECT RendezVous WHERE statut=en_attente
+db --> api: Liste demandes
+api --> front_sec: Liste demandes
+
+secretaire -> front_sec: Verifier disponibilite
+front_sec -> api: GET /api/v1/secretaire/demandes/{id}/disponibilite
+api -> rdv: Verifier creneaux + conflits
+rdv -> db: SELECT CreneauDisponible + RDV
+db --> rdv: Resultat
+rdv --> api: available=true/false
+api --> front_sec: Resultat disponibilite
+
+secretaire -> front_sec: Approuver demande
+front_sec -> api: POST /api/v1/secretaire/demandes/{id}/approuver
+api -> rdv: Transition en_attente -> confirme
+rdv -> db: UPDATE RendezVous.statut=confirme
+db --> api: OK
+api -> db: INSERT Notification (patient + medecin)
+db --> api: OK
+api --> front_sec: Rendez-vous confirme
+
+== Paiement ==
+patient -> front_patient: Initier paiement
+front_patient -> api: POST /api/v1/paiements/initier
+api -> pay: Creer/maj Paiement (en_attente)
+pay -> db: INSERT/UPDATE Paiement
+db --> pay: OK
+
+alt Paiement en ligne (PayDunya)
+  pay -> paydunya: Create checkout invoice
+  paydunya --> pay: checkoutUrl + token
+  pay -> db: UPDATE Paiement.transactionId=PDY-token
+  db --> pay: OK
+  pay --> api: paymentSession.checkoutUrl
+  api --> front_patient: Ouvrir checkoutUrl
+  patient -> paydunya: Payer (Wave/Orange Money/Card)
+  patient -> front_patient: Revenir dans l'application
+  front_patient -> api: POST /api/v1/paiements/{id}/payer
+  api -> pay: Verifier statut PayDunya
+  pay -> paydunya: Confirm invoice
+  paydunya --> pay: status=completed/failed
+  pay -> db: UPDATE Paiement.statut + date_paiement
+  pay -> db: UPDATE RendezVous.statut=paye
+  db --> api: OK
+  api --> front_patient: Paiement confirme
+else Paiement hors ligne (confirmationCode)
+  patient -> front_patient: Saisir code (6 chiffres)
+  front_patient -> api: POST /api/v1/paiements/{id}/payer
+  api -> pay: Valider code + marquer paye
+  pay -> db: UPDATE Paiement.statut=paye
+  pay -> db: UPDATE RendezVous.statut=paye
+  db --> api: OK
+  api --> front_patient: Paiement confirme
+end
+
+== Teleconsultation ==
+medecin -> front_med: Demarrer consultation
+front_med -> api: POST /api/v1/consultations/rendez-vous/{rdvId}/start
+api -> consul: Creer/maj Consultation (en_cours)
+consul -> db: INSERT/UPDATE Consultation
+db --> api: Consultation (id)
+
+medecin -> front_med: Demarrer appel video
+front_med -> api: POST /api/v1/consultations/{id}/video-session/start
+api -> consul: Generer URL Jitsi
+consul --> api: joinUrl
+api --> front_med: joinUrl
+front_med -> jitsi: Ouvrir room (iframe)
+
+patient -> front_patient: Rejoindre appel
+front_patient -> api: GET /api/v1/consultations/{id}/video-session
+api -> consul: Verifier acces + statut
+consul --> api: joinUrl
+api --> front_patient: joinUrl
+front_patient -> jitsi: Rejoindre room (iframe)
+
+loop Presence (toutes les 10-15s)
+  front_patient -> api: POST /api/v1/consultations/{id}/video-session/ping
+  front_med -> api: POST /api/v1/consultations/{id}/video-session/ping
+end
+
+== Ordonnance ==
+medecin -> front_med: Renseigner diagnostic + ordonnance
+front_med -> api: POST /api/v1/ordonnances
+api -> ord: Creer ordonnance
+ord -> db: INSERT Ordonnance + MedicamentOnOrdonnance
+db --> api: OK
+api --> front_med: Ordonnance creee
+
+@enduml

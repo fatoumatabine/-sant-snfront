@@ -1,0 +1,108 @@
+@startuml SANTE_SN_Activity_Diagram
+skinparam backgroundColor #FEFEFE
+skinparam activityBackgroundColor #F0F0F0
+
+title SANTE_SN - Diagramme d'Activités (Flux de Rendez-vous et Consultation)
+
+start
+:Accès au système;
+
+partition "Prise de Rendez-vous" {
+  :Patient se connecte;
+  :Consulte les créneaux disponibles;
+  :Patient décrit son problème;
+  :Système IA - Triage du patient;
+  decision "Urgent ?";
+  
+  if (Oui) then (Urgent)
+    :Marquer comme urgent;
+    :Notifier le médecin;
+  else (Non)
+    :Rendez-vous normal;
+  endif
+  
+  :Afficher créneaux compatibles;
+  :Patient sélectionne un créneau;
+  :Créer rendez-vous (EN_ATTENTE);
+}
+
+partition "Confirmation du Rendez-vous" {
+  :Notifier médecin/secrétaire;
+  :Secrétaire reçoit demande;
+  :Vérifier disponibilité du médecin;
+  decision "Disponibilité OK ?";
+  
+  if (Oui) then (Confirmer)
+    :Statut → CONFIRME;
+    :Notifier patient;
+  else (Non)
+    :Afficher alternatives;
+    decision "Patient accepte alternative ?";
+    if (Oui) then (Accepte)
+      :Réserver nouvelle date;
+      :Statut → CONFIRME;
+    else (Non)
+      :Statut → ANNULE;
+      :Notifier patient;
+    endif
+  endif
+}
+
+partition "Paiement" {
+  :Vérifier montant consultation;
+  :Proposer méthodes de paiement;
+  :Patient initie paiement;
+  :Traiter transaction;
+  decision "Paiement réussi ?";
+  
+  if (Oui) then (Succès)
+    :Statut → PAYE;
+    :Générer reçu;
+  else (Non)
+    :Statut → ECHOUE;
+    :Notifier patient;
+    :Proposer nouvelle tentative;
+  endif
+}
+
+partition "Consultation Médicale" {
+  :Patient se présente/se connecte;
+  :Médecin rejoint la consultation;
+  :Consultation - Statut → EN_COURS;
+  :Enregistrer constantes médicales;
+  :Examiner patient;
+  :Prescrire diagnostic;
+  :Prescrire ordonnance (si besoin);
+  
+  decision "Prestation requise ?";
+  if (Oui) then (Oui)
+    :Type: Analyse/Imagerie/Test;
+    :Créer demande prestation;
+    :Prestation - Statut → EN_ATTENTE;
+  else (Non)
+    :Pas de prestation;
+  endif
+  
+  :Terminer consultation;
+  :Consultation - Statut → TERMINE;
+}
+
+partition "Suivi Prestation (optionnel)" {
+  :Médecin/Labo effectue prestation;
+  :Prestation - Statut → EN_COURS;
+  :Enregistrer résultat;
+  :Prestation - Statut → TERMINE;
+  :Notifier patient;
+  :Patient consulte résultat;
+}
+
+partition "Archivage" {
+  :Consultation archivée;
+  :Ordonnances archivées;
+  :Rendez-vous finalisé;
+}
+
+:Fin du processus;
+stop
+
+@enduml

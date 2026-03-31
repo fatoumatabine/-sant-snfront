@@ -1,0 +1,18 @@
+@startuml SANTE_SN_State_Consultation
+skinparam backgroundColor #FEFEFE
+skinparam stateBackgroundColor #F0F0F0
+
+title SANTE_SN - Machine d'etats (Consultation)
+
+[*] --> en_attente : creer (systeme)
+
+en_attente --> en_cours : demarrer (medecin) \n(video-session/start)
+en_cours --> termine : finir (medecin)
+
+termine --> [*]
+
+note right of en_attente
+  Consultation liee a un RDV paye.
+end note
+
+@enduml

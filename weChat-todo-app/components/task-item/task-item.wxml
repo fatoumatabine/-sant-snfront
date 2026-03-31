@@ -1,0 +1,39 @@
+<view class="task-item {{ task.completed ? 'completed' : '' }} {{ isOverdue() ? 'overdue' : '' }}">
+  <!-- Checkbox -->
+  <view class="task-checkbox">
+    <view
+      class="checkbox {{ task.completed ? 'checked' : '' }}"
+      bindtap="toggleStatus"
+    >
+      <text wx:if="{{ task.completed }}">✓</text>
+    </view>
+  </view>
+
+  <!-- Contenu de la tâche -->
+  <view class="task-content">
+    <!-- Titre -->
+    <view class="task-title">{{ task.title }}</view>
+
+    <!-- Description -->
+    <view wx:if="{{ task.description }}" class="task-description">
+      {{ task.description }}
+    </view>
+
+    <!-- Date limite -->
+    <view wx:if="{{ task.dueDate }}" class="task-meta">
+      <text class="task-date {{ isOverdue() ? 'overdue-text' : '' }}">
+        📅 {{ formatDate(task.dueDate) }}
+      </text>
+    </view>
+  </view>
+
+  <!-- Bouton Supprimer -->
+  <view class="task-actions">
+    <button
+      class="btn-delete"
+      bindtap="delete"
+    >
+      🗑️
+    </button>
+  </view>
+</view>
