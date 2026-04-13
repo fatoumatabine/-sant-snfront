@@ -1,16 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell,
-  CheckCheck,
-  ChevronDown,
   LogOut,
   Menu,
   Moon,
-  Settings2,
   Sun,
-  Trash2,
-  User,
   X,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
@@ -76,20 +71,11 @@ const getSettingsPathForRole = (role: string) => {
 
 export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const notificationsMenuRef = useRef<HTMLDivElement | null>(null);
-  const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const { user, isAuthenticated, logout } = useAuthStore();
   const {
-    notifications,
     unreadCount,
-    isLoading: notificationsLoading,
     fetchNotifications,
     fetchUnreadCount,
-    markAsRead,
-    markAllAsRead,
-    deleteNotification,
     reset: resetNotifications,
   } = useNotificationStore();
   const { isDarkMode, toggleDarkMode } = useSettingsStore();
@@ -156,29 +142,12 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
     return () => window.clearInterval(interval);
   }, [isAuthenticated, notificationsEnabled, fetchNotifications, fetchUnreadCount, resetNotifications]);
 
-  const closeAllMenus = () => {
-    setNotificationsOpen(false);
-    setProfileMenuOpen(false);
-  };
-
   useEffect(() => {
-    // Ferme les menus sur clic extérieur (listener natif, pas synthétique React)
-    const handleOutsideClick = () => closeAllMenus();
-
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setMobileMenuOpen(false);
-        setNotificationsOpen(false);
-        setProfileMenuOpen(false);
-      }
+      if (event.key === 'Escape') setMobileMenuOpen(false);
     };
-
-    document.addEventListener('click', handleOutsideClick);
     document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('click', handleOutsideClick);
-      document.removeEventListener('keydown', handleEscape);
-    };
+    return () => document.removeEventListener('keydown', handleEscape);
   }, []);
 
   const handleLogout = async () => {
@@ -200,8 +169,6 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
   }
 
   if (isAuthenticated && user && !isPublicPage) {
-    const settingsPath = getSettingsPathForRole(user.role);
-
     return (
       <nav
         className={cn(
@@ -253,200 +220,41 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
                 <LogOut className="h-4 w-4" />
               </button>
 
+              {/* Notifications — lien direct vers la page */}
               {notificationsEnabled && (
-                <div className="relative z-[56]" ref={notificationsMenuRef}>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.nativeEvent.stopImmediatePropagation();
-                      setProfileMenuOpen(false);
-                      setNotificationsOpen((prev) => !prev);
-                    }}
-                    aria-haspopup="menu"
-                    aria-expanded={notificationsOpen}
-                    className="relative rounded-2xl border border-white/60 bg-background/75 p-2.5 text-muted-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-background hover:text-foreground"
-                  >
-                    <Bell className="h-4 w-4" />
-                    {unreadCount > 0 && (
-                      <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-white">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </button>
-
-                  {notificationsOpen && (
-                    <div onClick={(e) => e.nativeEvent.stopImmediatePropagation()} className="absolute right-0 z-[60] mt-3 w-80 overflow-hidden rounded-[28px] border border-border/70 bg-card shadow-[0_28px_70px_-36px_rgba(15,23,42,0.5)] backdrop-blur-xl">
-                      <div className="border-b border-border/70 bg-muted/30 px-4 py-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold">Notifications</p>
-                            <p className="text-xs text-muted-foreground">
-                              {unreadCount > 0 ? `${unreadCount} non lue(s)` : 'Boîte à jour'}
-                            </p>
-                          </div>
-                          {unreadCount > 0 ? (
-                            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
-                              {unreadCount}
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
-                        <button
-                          onClick={async () => {
-                            await markAllAsRead();
-                            await fetchUnreadCount();
-                          }}
-                          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                        >
-                          <CheckCheck className="h-3.5 w-3.5" />
-                          Tout lire
-                        </button>
-                      </div>
-
-                      <div className="max-h-80 overflow-y-auto">
-                        {notificationsLoading ? (
-                          <p className="p-4 text-center text-sm text-muted-foreground">Chargement...</p>
-                        ) : notifications.length === 0 ? (
-                          <div className="px-4 py-8 text-center">
-                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                              <Bell className="h-5 w-5" />
-                            </div>
-                            <p className="mt-3 text-sm font-medium">Aucune notification</p>
-                            <p className="mt-1 text-xs text-muted-foreground">Tout est calme pour le moment.</p>
-                          </div>
-                        ) : (
-                          notifications.map((notification) => (
-                            <div
-                              key={notification.id}
-                              className={cn(
-                                'border-b border-border px-4 py-3 hover:bg-muted/40 transition-colors',
-                                notification.lu && 'opacity-70'
-                              )}
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    if (!notification.lu) {
-                                      await markAsRead(notification.id);
-                                      await fetchUnreadCount();
-                                    }
-                                  }}
-                                  className="flex-1 text-left"
-                                >
-                                  <p className="text-sm font-medium">{notification.titre}</p>
-                                  <p className="mt-1 text-xs text-muted-foreground">{notification.message}</p>
-                                  <p className="mt-2 text-[11px] text-muted-foreground">{notification.date}</p>
-                                </button>
-                                <button
-                                  onClick={async () => {
-                                    await deleteNotification(notification.id);
-                                    await fetchUnreadCount();
-                                  }}
-                                  className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                                  title="Supprimer"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-
-                      <div className="border-t border-border bg-muted/20 px-4 py-2">
-                        <Link
-                          to={`/${user.role}/notifications`}
-                          onClick={() => setNotificationsOpen(false)}
-                          className="text-xs font-semibold text-primary hover:underline"
-                        >
-                          Voir tout
-                        </Link>
-                      </div>
-                    </div>
+                <Link
+                  to={`/${user.role}/notifications`}
+                  className="relative rounded-2xl border border-white/60 bg-background/75 p-2.5 text-muted-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-background hover:text-foreground"
+                  title="Notifications"
+                >
+                  <Bell className="h-4 w-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-white">
+                      {unreadCount}
+                    </span>
                   )}
-                </div>
+                </Link>
               )}
 
-              <div className="relative z-[56]" ref={profileMenuRef}>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.nativeEvent.stopImmediatePropagation();
-                    setNotificationsOpen(false);
-                    setProfileMenuOpen((prev) => !prev);
-                  }}
-                  aria-haspopup="menu"
-                  aria-expanded={profileMenuOpen}
-                  className="flex items-center gap-3 rounded-[22px] border border-white/60 bg-background/75 px-3 py-2 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-background"
-                >
-                  <Avatar className="h-9 w-9 rounded-xl border border-border/60">
-                    <AvatarImage src={getAvatarSrc(user.avatar)} alt={`${user.prenom} ${user.nom}`} />
-                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
-                      {getUserInitials(user.prenom, user.nom, user.email)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="hidden lg:block text-left">
-                    <span className="block max-w-[170px] truncate text-sm font-semibold">
-                      {user.prenom} {user.nom}
-                    </span>
+              {/* Profil — lien direct */}
+              <Link
+                to={`/${user.role}/profile`}
+                className="flex items-center gap-2 rounded-[22px] border border-white/60 bg-background/75 px-3 py-2 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-background"
+                title="Mon profil"
+              >
+                <Avatar className="h-9 w-9 rounded-xl border border-border/60">
+                  <AvatarImage src={getAvatarSrc(user.avatar)} alt={`${user.prenom} ${user.nom}`} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                    {getUserInitials(user.prenom, user.nom, user.email)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="hidden lg:block text-left">
+                  <span className="block max-w-[160px] truncate text-sm font-semibold">
+                    {user.prenom} {user.nom}
                   </span>
-                  <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', profileMenuOpen && 'rotate-180')} />
-                </button>
-
-                {profileMenuOpen && (
-                  <div
-                    role="menu"
-                    onClick={(e) => e.nativeEvent.stopImmediatePropagation()}
-                    className="absolute right-0 z-[60] mt-3 w-64 overflow-hidden rounded-[28px] border border-border/70 bg-card p-2 shadow-[0_28px_70px_-36px_rgba(15,23,42,0.5)] backdrop-blur-xl"
-                  >
-                    <div className="rounded-[20px] border border-border/70 bg-muted/25 p-3">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-11 w-11 rounded-2xl border border-white/70 shadow-sm">
-                          <AvatarImage src={getAvatarSrc(user.avatar)} alt={`${user.prenom} ${user.nom}`} />
-                          <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-sm font-semibold text-white">
-                            {getUserInitials(user.prenom, user.nom, user.email)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">
-                            {user.prenom} {user.nom}
-                          </p>
-                          <p className="truncate text-xs text-muted-foreground">{user.email}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Link
-                      to={`/${user.role}/profile`}
-                      className="mt-2 flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium hover:bg-muted"
-                      onClick={() => setProfileMenuOpen(false)}
-                    >
-                      <User className="h-4 w-4 text-primary" />
-                      Mon profil
-                    </Link>
-                    {settingsPath ? (
-                      <Link
-                        to={settingsPath}
-                        className="mt-1 flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium hover:bg-muted"
-                        onClick={() => setProfileMenuOpen(false)}
-                      >
-                        <Settings2 className="h-4 w-4 text-primary" />
-                        Paramètres
-                      </Link>
-                    ) : null}
-                    <button
-                      onClick={handleLogout}
-                      className="mt-1 flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Deconnexion
-                    </button>
-                  </div>
-                )}
-              </div>
+                  <span className="block text-xs text-muted-foreground capitalize">{user.role}</span>
+                </span>
+              </Link>
             </div>
           </div>
         </div>
