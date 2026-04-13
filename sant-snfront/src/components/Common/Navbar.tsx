@@ -156,12 +156,12 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
     return () => window.clearInterval(interval);
   }, [isAuthenticated, notificationsEnabled, fetchNotifications, fetchUnreadCount, resetNotifications]);
 
-  useEffect(() => {
-    const handleDocumentClick = () => {
-      setNotificationsOpen(false);
-      setProfileMenuOpen(false);
-    };
+  const closeAllMenus = () => {
+    setNotificationsOpen(false);
+    setProfileMenuOpen(false);
+  };
 
+  useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setMobileMenuOpen(false);
@@ -170,13 +170,8 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
       }
     };
 
-    document.addEventListener('click', handleDocumentClick);
     document.addEventListener('keydown', handleEscape);
-
-    return () => {
-      document.removeEventListener('click', handleDocumentClick);
-      document.removeEventListener('keydown', handleEscape);
-    };
+    return () => document.removeEventListener('keydown', handleEscape);
   }, []);
 
   const handleLogout = async () => {
@@ -229,6 +224,10 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
             </div>
 
             <div className="flex items-center gap-1 md:gap-2">
+              {/* Backdrop invisible — ferme les menus si on clique en dehors */}
+              {(profileMenuOpen || notificationsOpen) && (
+                <div className="fixed inset-0 z-[55]" onClick={closeAllMenus} />
+              )}
               <button
                 onClick={() => {
                   setNotificationsOpen(false);
@@ -242,11 +241,10 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
               </button>
 
               {notificationsEnabled && (
-                <div className="relative" ref={notificationsMenuRef}>
+                <div className="relative z-[56]" ref={notificationsMenuRef}>
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={() => {
                       setProfileMenuOpen(false);
                       setNotificationsOpen((prev) => !prev);
                     }}
@@ -263,7 +261,7 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
                   </button>
 
                   {notificationsOpen && (
-                    <div onClick={(e) => e.stopPropagation()} className="absolute right-0 z-20 mt-3 w-80 overflow-hidden rounded-[28px] border border-border/70 bg-card/95 shadow-[0_28px_70px_-36px_rgba(15,23,42,0.5)] backdrop-blur-xl">
+                    <div className="absolute right-0 z-[60] mt-3 w-80 overflow-hidden rounded-[28px] border border-border/70 bg-card shadow-[0_28px_70px_-36px_rgba(15,23,42,0.5)] backdrop-blur-xl">
                       <div className="border-b border-border/70 bg-muted/30 px-4 py-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
@@ -358,11 +356,10 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
                 </div>
               )}
 
-              <div className="relative" ref={profileMenuRef}>
+              <div className="relative z-[56]" ref={profileMenuRef}>
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
+                  onClick={() => {
                     setNotificationsOpen(false);
                     setProfileMenuOpen((prev) => !prev);
                   }}
@@ -387,8 +384,7 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
                 {profileMenuOpen && (
                   <div
                     role="menu"
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute right-0 z-20 mt-3 w-64 overflow-hidden rounded-[28px] border border-border/70 bg-card/95 p-2 shadow-[0_28px_70px_-36px_rgba(15,23,42,0.5)] backdrop-blur-xl"
+                    className="absolute right-0 z-[60] mt-3 w-64 overflow-hidden rounded-[28px] border border-border/70 bg-card p-2 shadow-[0_28px_70px_-36px_rgba(15,23,42,0.5)] backdrop-blur-xl"
                   >
                     <div className="rounded-[20px] border border-border/70 bg-muted/25 p-3">
                       <div className="flex items-center gap-3">
