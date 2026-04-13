@@ -157,16 +157,9 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
   }, [isAuthenticated, notificationsEnabled, fetchNotifications, fetchUnreadCount, resetNotifications]);
 
   useEffect(() => {
-    const handleDocumentClick = (event: MouseEvent) => {
-      const target = event.target as Node;
-
-      if (notificationsMenuRef.current && !notificationsMenuRef.current.contains(target)) {
-        setNotificationsOpen(false);
-      }
-
-      if (profileMenuRef.current && !profileMenuRef.current.contains(target)) {
-        setProfileMenuOpen(false);
-      }
+    const handleDocumentClick = () => {
+      setNotificationsOpen(false);
+      setProfileMenuOpen(false);
     };
 
     const handleEscape = (event: KeyboardEvent) => {
@@ -177,11 +170,11 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
       }
     };
 
-    document.addEventListener('mousedown', handleDocumentClick);
+    document.addEventListener('click', handleDocumentClick);
     document.addEventListener('keydown', handleEscape);
 
     return () => {
-      document.removeEventListener('mousedown', handleDocumentClick);
+      document.removeEventListener('click', handleDocumentClick);
       document.removeEventListener('keydown', handleEscape);
     };
   }, []);
@@ -252,7 +245,8 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
                 <div className="relative" ref={notificationsMenuRef}>
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setProfileMenuOpen(false);
                       setNotificationsOpen((prev) => !prev);
                     }}
@@ -269,7 +263,7 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
                   </button>
 
                   {notificationsOpen && (
-                    <div className="absolute right-0 z-20 mt-3 w-80 overflow-hidden rounded-[28px] border border-border/70 bg-card/95 shadow-[0_28px_70px_-36px_rgba(15,23,42,0.5)] backdrop-blur-xl">
+                    <div onClick={(e) => e.stopPropagation()} className="absolute right-0 z-20 mt-3 w-80 overflow-hidden rounded-[28px] border border-border/70 bg-card/95 shadow-[0_28px_70px_-36px_rgba(15,23,42,0.5)] backdrop-blur-xl">
                       <div className="border-b border-border/70 bg-muted/30 px-4 py-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
@@ -367,7 +361,8 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
               <div className="relative" ref={profileMenuRef}>
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setNotificationsOpen(false);
                     setProfileMenuOpen((prev) => !prev);
                   }}
@@ -392,6 +387,7 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
                 {profileMenuOpen && (
                   <div
                     role="menu"
+                    onClick={(e) => e.stopPropagation()}
                     className="absolute right-0 z-20 mt-3 w-64 overflow-hidden rounded-[28px] border border-border/70 bg-card/95 p-2 shadow-[0_28px_70px_-36px_rgba(15,23,42,0.5)] backdrop-blur-xl"
                   >
                     <div className="rounded-[20px] border border-border/70 bg-muted/25 p-3">
