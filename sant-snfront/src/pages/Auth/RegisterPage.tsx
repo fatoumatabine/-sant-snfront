@@ -721,7 +721,7 @@ export const RegisterPage: React.FC = () => {
             </div>
           </div>
 
-          {/* ══════════════ RIGHT – Panel ══════════════ */}
+          {/* ══════════════ RIGHT – Welcome Panel ══════════════ */}
           <div
             className="hidden lg:flex w-full lg:w-[42%] flex-col justify-between p-10 relative overflow-hidden"
             style={{ background: 'linear-gradient(155deg, #005461 0%, #0C7779 50%, #249E94 100%)' }}
@@ -731,62 +731,47 @@ export const RegisterPage: React.FC = () => {
             <div className="absolute bottom-0 left-0 w-56 h-56 bg-white/5 rounded-full -translate-x-1/3 translate-y-1/3 pointer-events-none" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 border border-white/10 rounded-full pointer-events-none" />
 
-            {/* Top: brand */}
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-8">
-                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                  <Heart className="h-5 w-5 text-white fill-white" />
+            <div className="relative z-10 flex flex-col h-full justify-between">
+              <div>
+                {/* Brand */}
+                <div className="flex items-center gap-2 mb-10">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <Heart className="h-5 w-5 text-white fill-white" />
+                  </div>
+                  <span className="text-white font-bold text-lg font-display">SANTÉ SN</span>
                 </div>
-                <span className="text-white font-bold text-lg font-display">SANTÉ SN</span>
-              </div>
 
-              <h2 className="text-3xl font-bold font-display text-white leading-tight mb-3">
-                Votre santé,<br />notre priorité.
-              </h2>
-              <p className="text-teal-100/80 text-sm leading-relaxed mb-8">
-                En quelques étapes, créez votre dossier médical numérique sécurisé et accédez à nos médecins qualifiés.
-              </p>
+                <h2 className="text-3xl font-bold font-display text-white leading-tight mb-3">
+                  Votre santé,
+                  <br />
+                  <span className="text-[#3BC1A8]">simplifiée.</span>
+                </h2>
+                <p className="text-teal-100/80 text-sm leading-relaxed mb-8">
+                  Créez votre compte pour profiter d'une gestion intelligente de vos rendez-vous, consultations et dossiers médicaux.
+                </p>
 
-              {/* Steps overview */}
-              <div className="space-y-3 mb-8">
-                {STEPS.map((s) => {
-                  const done = step > s.id;
-                  const active = step === s.id;
-                  return (
+                {/* Benefits */}
+                <div className="space-y-3 mb-10">
+                  {[
+                    { label: 'Prise de rendez-vous rapide', desc: 'Choisissez votre médecin et vos créneaux en ligne' },
+                    { label: 'Suivi de dossier', desc: 'Gardez votre historique médical toujours accessible' },
+                    { label: 'Consultations à distance', desc: 'Bénéficiez de la télémédecine depuis chez vous' },
+                  ].map(({ label, desc }) => (
                     <div
-                      key={s.id}
-                      className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-300 ${
-                        active
-                          ? 'bg-white/15 border border-white/20'
-                          : 'opacity-60'
-                      }`}
+                      key={label}
+                      className="flex items-start gap-3 p-3 rounded-xl bg-white/10 border border-white/10"
                     >
-                      <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                          done ? 'bg-[#3BC1A8]' : active ? 'bg-white/20' : 'bg-white/10'
-                        }`}
-                      >
-                        {done ? (
-                          <CheckCircle2 className="h-4 w-4 text-white" />
-                        ) : (
-                          <s.Icon className="h-4 w-4 text-white" />
-                        )}
-                      </div>
+                      <div className="w-1.5 h-1.5 bg-[#3BC1A8] rounded-full mt-1.5 flex-shrink-0" />
                       <div>
-                        <p className="text-white text-sm font-semibold leading-none">{s.label}</p>
-                        <p className="text-teal-100/70 text-xs mt-0.5">{s.sublabel}</p>
+                        <p className="text-white text-sm font-semibold leading-none">{label}</p>
+                        <p className="text-teal-100/70 text-xs mt-0.5">{desc}</p>
                       </div>
-                      {active && (
-                        <div className="ml-auto w-1.5 h-1.5 bg-[#3BC1A8] rounded-full animate-pulse" />
-                      )}
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Bottom: benefits */}
-            <div className="relative z-10">
+              {/* Bottom trust section */}
               <div className="border-t border-white/10 pt-6 space-y-3">
                 {BENEFITS.map(({ Icon, text }) => (
                   <div key={text} className="flex items-center gap-3">

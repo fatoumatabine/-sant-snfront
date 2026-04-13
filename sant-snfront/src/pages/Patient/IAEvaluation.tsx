@@ -8,9 +8,23 @@ import { API_ENDPOINTS } from '@/config/api-endpoints';
 import { toast } from 'sonner';
 import { savePatientTriage } from '@/lib/patientTriage';
 
+const OTHER_OPTION_LABEL = 'Autre';
+
+type ApiDataEnvelope<T> = T | { data?: T };
+
+const unwrapApiData = <T,>(response: ApiDataEnvelope<T>): T => {
+  if (typeof response === 'object' && response !== null && 'data' in response && response.data !== undefined) {
+    return response.data;
+  }
+
+  return response as T;
+};
+
 export const IAEvaluation: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [reponses, setReponses] = useState<Record<string, string | string[]>>({});
+  const [otherChoiceSelections, setOtherChoiceSelections] = useState<Record<string, boolean>>({});
+  const [otherChoiceInputs, setOtherChoiceInputs] = useState<Record<string, string>>({});
   const [resultat, setResultat] = useState<{
     id: number;
     niveau: 'faible' | 'modere' | 'eleve';
@@ -44,8 +58,10 @@ export const IAEvaluation: React.FC = () => {
   } = useQuery({
     queryKey: ['patient-triage-history'],
     queryFn: async () => {
-      const response: any = await apiService.get(`${API_ENDPOINTS.patient.triage.list}?limit=5`);
-      return (response?.data || response || []) as TriageHistoryItem[];
+      const response = await apiService.get<ApiDataEnvelope<TriageHistoryItem[]>>(
+        `${API_ENDPOINTS.patient.triage.list}?limit=5`
+      );
+      return unwrapApiData(response) || [];
     },
   });
 
@@ -54,17 +70,49 @@ export const IAEvaluation: React.FC = () => {
       responses: Record<string, string | string[]>;
       contexteLibre?: string;
     }) => {
-      const response: any = await apiService.post(API_ENDPOINTS.patient.triage.run, payload);
-      return (response?.data || response) as TriageHistoryItem;
+      const response = await apiService.post<ApiDataEnvelope<TriageHistoryItem>>(
+        API_ENDPOINTS.patient.triage.run,
+        payload
+      );
+      return unwrapApiData(response);
     },
   });
 
   const currentQuestion = questionsEvaluationIA[currentStep];
+  const currentQuestionId = currentQuestion.id;
   const isLastQuestion = currentStep === questionsEvaluationIA.length - 1;
   const progress = ((currentStep + 1) / questionsEvaluationIA.length) * 100;
+  const currentResponse = reponses[currentQuestionId];
+  const currentChoiceValue =
+    currentQuestion.type === 'choice'
+      ? otherChoiceSelections[currentQuestionId]
+        ? OTHER_OPTION_LABEL
+        : typeof currentResponse === 'string'
+          ? currentResponse
+          : undefined
+      : undefined;
+  const showOtherChoiceInput =
+    currentQuestion.type === 'choice' &&
+    currentQuestion.options?.includes(OTHER_OPTION_LABEL) &&
+    Boolean(otherChoiceSelections[currentQuestionId]);
+  const currentOtherChoiceInput =
+    typeof otherChoiceInputs[currentQuestionId] === 'string'
+      ? otherChoiceInputs[currentQuestionId]
+      : '';
 
-  const handleResponse = (value: string | string[]) => {
-    setReponses({ ...reponses, [currentQuestion.id]: value });
+  const handleResponse = (questionId: string, value: string | string[]) => {
+    setReponses((prev) => ({ ...prev, [questionId]: value }));
+  };
+
+  const handleChoiceSelect = (option: string) => {
+    if (option === OTHER_OPTION_LABEL) {
+      setOtherChoiceSelections((prev) => ({ ...prev, [currentQuestionId]: true }));
+      handleResponse(currentQuestionId, otherChoiceInputs[currentQuestionId] || '');
+      return;
+    }
+
+    setOtherChoiceSelections((prev) => ({ ...prev, [currentQuestionId]: false }));
+    handleResponse(currentQuestionId, option);
   };
 
   const handleNext = async () => {
@@ -110,13 +158,14 @@ export const IAEvaluation: React.FC = () => {
   const resetEvaluation = () => {
     setCurrentStep(0);
     setReponses({});
+    setOtherChoiceSelections({});
+    setOtherChoiceInputs({});
     setResultat(null);
   };
 
-  const canProceed = reponses[currentQuestion?.id] !== undefined && 
-    (typeof reponses[currentQuestion?.id] === 'string' 
-      ? reponses[currentQuestion.id] !== ''
-      : (reponses[currentQuestion.id] as string[]).length > 0);
+  const canProceed =
+    currentResponse !== undefined &&
+    (typeof currentResponse === 'string' ? currentResponse.trim() !== '' : currentResponse.length > 0);
 
   // Résultat final
   if (resultat) {
@@ -323,7 +372,7 @@ export const IAEvaluation: React.FC = () => {
               <label
                 key={option}
                 className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
-                  reponses[currentQuestion.id] === option
+                  currentChoiceValue === option
                     ? 'border-primary bg-primary/5'
                     : 'border-border hover:border-primary/50'
                 }`}
@@ -331,22 +380,39 @@ export const IAEvaluation: React.FC = () => {
                 <input
                   type="radio"
                   name={currentQuestion.id}
-                  checked={reponses[currentQuestion.id] === option}
-                  onChange={() => handleResponse(option)}
+                  checked={currentChoiceValue === option}
+                  onChange={() => handleChoiceSelect(option)}
                   className="sr-only"
                 />
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  reponses[currentQuestion.id] === option
+                  currentChoiceValue === option
                     ? 'border-primary'
                     : 'border-muted-foreground'
                 }`}>
-                  {reponses[currentQuestion.id] === option && (
+                  {currentChoiceValue === option && (
                     <div className="w-3 h-3 rounded-full bg-primary" />
                   )}
                 </div>
                 <span>{option}</span>
               </label>
             ))}
+
+            {showOtherChoiceInput && (
+              <div className="mt-3">
+                <input
+                  type="text"
+                  value={currentOtherChoiceInput}
+                  onChange={(e) => {
+                    const { value } = e.target;
+                    setOtherChoiceInputs((prev) => ({ ...prev, [currentQuestion.id]: value }));
+                    handleResponse(currentQuestion.id, value);
+                  }}
+                  placeholder="Précisez votre symptôme ou motif de consultation"
+                  className="input-health"
+                  autoFocus
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -369,9 +435,9 @@ export const IAEvaluation: React.FC = () => {
                     onChange={() => {
                       const current = (reponses[currentQuestion.id] as string[]) || [];
                       if (selected) {
-                        handleResponse(current.filter(v => v !== option));
+                        handleResponse(currentQuestion.id, current.filter(v => v !== option));
                       } else {
-                        handleResponse([...current, option]);
+                        handleResponse(currentQuestion.id, [...current, option]);
                       }
                     }}
                     className="sr-only"
@@ -395,7 +461,7 @@ export const IAEvaluation: React.FC = () => {
               min="1"
               max="10"
               value={(reponses[currentQuestion.id] as string) || '5'}
-              onChange={(e) => handleResponse(e.target.value)}
+              onChange={(e) => handleResponse(currentQuestion.id, e.target.value)}
               className="w-full h-2 bg-muted rounded-full appearance-none cursor-pointer accent-primary"
             />
             <div className="flex justify-between text-sm text-muted-foreground">
@@ -411,7 +477,7 @@ export const IAEvaluation: React.FC = () => {
         {currentQuestion.type === 'text' && (
           <textarea
             value={(reponses[currentQuestion.id] as string) || ''}
-            onChange={(e) => handleResponse(e.target.value)}
+            onChange={(e) => handleResponse(currentQuestion.id, e.target.value)}
             placeholder="Votre réponse..."
             className="input-health min-h-[120px]"
           />

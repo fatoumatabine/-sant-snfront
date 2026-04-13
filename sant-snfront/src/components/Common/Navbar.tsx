@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Activity,
   Bell,
   CheckCheck,
   ChevronDown,
@@ -9,7 +8,6 @@ import {
   Menu,
   Moon,
   Settings2,
-  Sparkles,
   Sun,
   Trash2,
   User,
@@ -21,7 +19,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { cn } from '@/lib/utils';
 import { readAdminSettings } from '@/lib/adminSettings';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getAvatarSrc, getRoleLabel, getUserInitials } from '@/lib/avatar';
+import { getAvatarSrc, getUserInitials } from '@/lib/avatar';
 
 interface NavbarProps {
   sidebarExpanded?: boolean;
@@ -207,7 +205,6 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
   }
 
   if (isAuthenticated && user && !isPublicPage) {
-    const roleLabel = getRoleLabel(user.role);
     const settingsPath = getSettingsPathForRole(user.role);
 
     return (
@@ -217,9 +214,11 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
           sidebarExpanded ? 'lg:pl-[300px]' : 'lg:pl-[98px]'
         )}
       >
-        <div className="relative overflow-hidden rounded-[30px] border border-white/60 bg-card/85 px-4 shadow-[0_26px_60px_-34px_rgba(15,23,42,0.45)] backdrop-blur-xl md:px-5">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.16),transparent_24%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.12),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.82),rgba(255,255,255,0.72))]" />
-          <div className="pointer-events-none absolute -right-12 top-0 h-36 w-36 rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative rounded-[30px] border border-white/60 bg-card/85 px-4 shadow-[0_26px_60px_-34px_rgba(15,23,42,0.45)] backdrop-blur-xl md:px-5">
+          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[30px]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.16),transparent_24%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.12),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.82),rgba(255,255,255,0.72))]" />
+            <div className="absolute -right-12 top-0 h-36 w-36 rounded-full bg-primary/10 blur-3xl" />
+          </div>
           <div className="relative flex h-16 items-center justify-between gap-3 md:h-20">
             <div className="flex min-w-0 items-center gap-3 md:gap-4">
               <Avatar className="h-11 w-11 rounded-[18px] border border-white/70 shadow-md">
@@ -229,30 +228,11 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-base font-semibold md:text-lg">{currentSectionLabel}</p>
-                  <span className="rounded-full border border-primary/15 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-                    {roleLabel}
-                  </span>
-                </div>
+                <p className="truncate text-base font-semibold md:text-lg">{currentSectionLabel}</p>
                 <p className="truncate text-xs text-muted-foreground md:text-sm">
                   {user.prenom} {user.nom} • {dashboardDateLabel}
                 </p>
               </div>
-            </div>
-
-            <div className="hidden xl:flex items-center gap-2">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-background/75 px-3 py-2 text-xs font-medium text-muted-foreground shadow-sm">
-                <Activity className="h-3.5 w-3.5 text-primary" />
-                Espace sécurisé
-              </span>
-              <span className="rounded-full border border-white/70 bg-background/75 px-3 py-2 text-xs font-medium text-muted-foreground shadow-sm">
-                {dashboardDateLabel}
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary">
-                <Sparkles className="h-3.5 w-3.5" />
-                Session active
-              </span>
             </div>
 
             <div className="flex items-center gap-1 md:gap-2">
@@ -289,7 +269,7 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
                   </button>
 
                   {notificationsOpen && (
-                    <div className="absolute right-0 mt-3 w-80 overflow-hidden rounded-[28px] border border-border/70 bg-card/95 shadow-[0_28px_70px_-36px_rgba(15,23,42,0.5)] backdrop-blur-xl">
+                    <div className="absolute right-0 z-20 mt-3 w-80 overflow-hidden rounded-[28px] border border-border/70 bg-card/95 shadow-[0_28px_70px_-36px_rgba(15,23,42,0.5)] backdrop-blur-xl">
                       <div className="border-b border-border/70 bg-muted/30 px-4 py-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
@@ -405,7 +385,6 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
                     <span className="block max-w-[170px] truncate text-sm font-semibold">
                       {user.prenom} {user.nom}
                     </span>
-                    <span className="block text-[11px] text-muted-foreground">{roleLabel}</span>
                   </span>
                   <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', profileMenuOpen && 'rotate-180')} />
                 </button>
@@ -413,7 +392,7 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
                 {profileMenuOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 mt-3 w-64 overflow-hidden rounded-[28px] border border-border/70 bg-card/95 p-2 shadow-[0_28px_70px_-36px_rgba(15,23,42,0.5)] backdrop-blur-xl"
+                    className="absolute right-0 z-20 mt-3 w-64 overflow-hidden rounded-[28px] border border-border/70 bg-card/95 p-2 shadow-[0_28px_70px_-36px_rgba(15,23,42,0.5)] backdrop-blur-xl"
                   >
                     <div className="rounded-[20px] border border-border/70 bg-muted/25 p-3">
                       <div className="flex items-center gap-3">

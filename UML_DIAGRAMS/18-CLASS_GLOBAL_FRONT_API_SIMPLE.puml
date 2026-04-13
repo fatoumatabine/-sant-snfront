@@ -1,0 +1,199 @@
+@startuml SANTE_SN_Front_API_Global_Simple
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F8F8F8
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+title SANTE SN - Diagramme Global Simple Front + API
+
+package "Frontend React / Vite" {
+  class LoginPage {
+    email
+    password
+    handleSubmit()
+  }
+
+  class RegisterPage
+
+  class APIService {
+    baseURL
+    token
+    get()
+    post()
+    put()
+    delete()
+  }
+
+  class AuthStore {
+    user
+    token
+    isAuthenticated
+    login()
+    register()
+    logout()
+  }
+
+  class AuthRepository {
+    login()
+    register()
+    forgotPassword()
+    resetPassword()
+    getCurrentUser()
+  }
+
+  class FrontUser {
+    id
+    email
+    name
+    role
+  }
+
+  class FrontSession {
+    accessToken
+    refreshToken
+  }
+
+  class FrontRendezVous {
+    id
+    date
+    heure
+    type
+    statut
+  }
+}
+
+package "Backend API Node / Express / Prisma" {
+  class AuthController {
+    register()
+    login()
+    logout()
+    forgotPassword()
+    resetPassword()
+    me()
+  }
+
+  class AuthService {
+    register()
+    login()
+    logout()
+    forgotPassword()
+    resetPassword()
+    refreshToken()
+  }
+
+  class User {
+    id
+    email
+    password
+    name
+    role
+  }
+
+  class Patient {
+    id
+    nom
+    prenom
+    telephone
+  }
+
+  class Medecin {
+    id
+    nom
+    prenom
+    specialite
+  }
+
+  class Secretaire {
+    id
+    nom
+    prenom
+    telephone
+  }
+
+  class RendezVous {
+    id
+    numero
+    date
+    heure
+    type
+    statut
+  }
+
+  class Consultation {
+    id
+    date
+    heure
+    statut
+    diagnostic
+  }
+
+  class Ordonnance {
+    id
+    contenu
+  }
+
+  class Paiement {
+    id
+    montant
+    methode
+    statut
+  }
+
+  class Prestation {
+    id
+    type
+    statut
+  }
+
+  class Notification {
+    id
+    titre
+    message
+    lu
+  }
+
+  class CreneauDisponible {
+    id
+    jour
+    heure
+    actif
+  }
+}
+
+LoginPage --> AuthStore
+RegisterPage --> AuthStore
+AuthStore --> APIService
+AuthRepository --> APIService
+AuthStore ..> FrontUser
+AuthRepository ..> FrontSession
+AuthRepository ..> FrontUser
+
+APIService ..> AuthController : HTTP /api/v1
+AuthController --> AuthService
+
+User "1" -- "0..1" Patient
+User "1" -- "0..1" Medecin
+User "1" -- "0..1" Secretaire
+User "1" -- "0..*" Notification
+
+Patient "1" -- "0..*" RendezVous
+Medecin "1" -- "0..*" RendezVous
+Medecin "1" -- "0..*" CreneauDisponible
+Medecin "1" -- "0..*" Secretaire
+
+RendezVous "1" -- "0..1" Consultation
+RendezVous "1" -- "0..1" Paiement
+
+Patient "1" -- "0..*" Consultation
+Medecin "1" -- "0..*" Consultation
+
+Consultation "1" -- "0..1" Ordonnance
+Consultation "1" -- "0..*" Prestation
+
+Patient "1" -- "0..*" Paiement
+Patient "1" -- "0..*" Prestation
+
+FrontUser ..> User : mapping
+FrontRendezVous ..> RendezVous : mapping
+
+@enduml

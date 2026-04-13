@@ -21,6 +21,9 @@ Tous les diagrammes UML du système **SANTE_SN** ont été créés au format **P
 15. ✅ **14-SEQUENCE_AUTHENTIFICATION.puml** - Séquence (Authentification)
 16. ✅ **15-SEQUENCE_DEMANDE_RDV.puml** - Séquence (Demande & validation RDV)
 17. ✅ **16-SEQUENCE_PAIEMENT_RDV.puml** - Séquence (Paiement RDV - PayDunya)
+18. ✅ **17-CLASS_GLOBAL_SIMPLE_API.puml** - Diagramme global simple (API)
+19. ✅ **18-CLASS_GLOBAL_FRONT_API_SIMPLE.puml** - Diagramme global simple (Front + API)
+20. ✅ **19-CLASS_DIAGRAM_COMPLET_PROJET.puml** - Diagramme de classes complet du projet
 
 Localisation : `/home/syllafall/Documents/soutenance/UML_DIAGRAMS/`
 
@@ -125,6 +128,9 @@ Diagrammes par acteur (pratiques pour ton memoire) :
   - Et bien d'autres...
 - **Énumérations** : Role, StatutRendezVous, TypeRendezVous, StatutConsultation, StatutPaiement, StatutPrestation
 - **Associations** : 1-to-1, 1-to-*, *-to-*
+
+Version detaillee et a jour avec tout le schema Prisma :
+- `19-CLASS_DIAGRAM_COMPLET_PROJET.puml`
 
 ### 🔄 **Diagramme d'Activités** (03-ACTIVITY_DIAGRAM.puml)
 **Flux complet** : Prise de RDV → Confirmation → Paiement → Consultation → Prestation → Archivage

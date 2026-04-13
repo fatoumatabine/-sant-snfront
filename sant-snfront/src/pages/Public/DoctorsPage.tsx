@@ -47,7 +47,7 @@ const trustPoints = [
 ];
 
 const DoctorsPage: React.FC = () => {
-  const { data: catalog, isLoading, isError, error } = useMarketingCatalog();
+  const { data: catalog, isLoading, isError } = useMarketingCatalog();
   const resolvedCatalog = catalog ?? marketingCatalogFallback;
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedSpecialite = searchParams.get('specialite') || '';
@@ -110,7 +110,6 @@ const DoctorsPage: React.FC = () => {
             {isError ? (
               <div className="rounded-[1.75rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
                 Les disponibilités temps réel sont momentanément indisponibles. Une version de secours reste affichée pour permettre aux patients de continuer leur parcours.
-                {error instanceof Error ? ` ${error.message}` : ''}
               </div>
             ) : null}
 

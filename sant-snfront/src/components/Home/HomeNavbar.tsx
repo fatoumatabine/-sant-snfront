@@ -95,7 +95,7 @@ export const HomeNavbar: React.FC = () => {
                     <ChevronDown className={cn('h-4 w-4 text-gray-400 transition-transform', profileOpen && 'rotate-180')} />
                   </button>
                   {profileOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+                    <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl">
                       <Link
                         to={`/${user.role}/profile`}
                         className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"

@@ -1,0 +1,423 @@
+@startuml SANTE_SN_Class_Diagram_Complet_Projet
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor #F9FAFB
+skinparam classBorderColor #475569
+skinparam packageBorderColor #CBD5E1
+skinparam packageBackgroundColor #F8FAFC
+skinparam noteBackgroundColor #FFF7ED
+skinparam noteBorderColor #FDBA74
+left to right direction
+
+title SANTE SN - Diagramme de Classes Complet du Projet
+
+package "Enumerations" {
+  enum Role {
+    patient
+    medecin
+    secretaire
+    admin
+  }
+
+  enum StatutRendezVous {
+    en_attente
+    confirme
+    termine
+    annule
+    paye
+  }
+
+  enum TypeRendezVous {
+    en_ligne
+    presentiel
+    prestation
+  }
+
+  enum StatutConsultation {
+    en_attente
+    en_cours
+    termine
+  }
+
+  enum StatutPaiement {
+    en_attente
+    paye
+    echoue
+    rembourse
+  }
+
+  enum StatutPrestation {
+    en_attente
+    en_cours
+    termine
+  }
+}
+
+package "Utilisateurs et Parametrage" {
+  class User <<entity>> {
+    +id: Int
+    +email: String
+    +password: String
+    +name: String
+    +avatarUrl: String?
+    +role: Role
+    +emailVerifiedAt: DateTime?
+    +rememberToken: String?
+    +isArchived: Boolean
+    +archivedAt: DateTime?
+    +createdAt: DateTime
+    +updatedAt: DateTime
+    --
+    +login()
+    +logout()
+    +updateProfile()
+  }
+
+  class Patient <<entity>> {
+    +id: Int
+    +userId: Int
+    +nom: String
+    +prenom: String
+    +telephone: String
+    +date_naissance: DateTime?
+    +adresse: String?
+    +groupe_sanguin: String?
+    +diabete: Boolean
+    +hypertension: Boolean
+    +hepatite: Boolean
+    +autres_pathologies: String?
+    +isArchived: Boolean
+    +archivedAt: DateTime?
+    +createdAt: DateTime
+    +updatedAt: DateTime
+    --
+    +demanderRendezVous()
+    +consulterHistorique()
+    +effectuerPaiement()
+  }
+
+  class Medecin <<entity>> {
+    +id: Int
+    +userId: Int
+    +nom: String
+    +prenom: String
+    +specialite: String
+    +telephone: String
+    +adresse: String?
+    +tarif_consultation: Float
+    +isArchived: Boolean
+    +archivedAt: DateTime?
+    +createdAt: DateTime
+    +updatedAt: DateTime
+    --
+    +gererCreneaux()
+    +demarrerConsultation()
+    +redigerOrdonnance()
+  }
+
+  class Secretaire <<entity>> {
+    +id: Int
+    +userId: Int
+    +medecinId: Int?
+    +nom: String
+    +prenom: String
+    +telephone: String
+    +isArchived: Boolean
+    +archivedAt: DateTime?
+    +createdAt: DateTime
+    +updatedAt: DateTime
+    --
+    +validerRendezVous()
+    +annulerRendezVous()
+    +consulterDisponibilites()
+  }
+
+  class Notification <<entity>> {
+    +id: Int
+    +userId: Int
+    +titre: String
+    +message: String
+    +lu: Boolean
+    +isArchived: Boolean
+    +archivedAt: DateTime?
+    +createdAt: DateTime
+    --
+    +envoyer()
+    +marquerCommeLu()
+  }
+
+  class UserSetting <<entity>> {
+    +id: Int
+    +userId: Int
+    +value: Json
+    +createdAt: DateTime
+    +updatedAt: DateTime
+  }
+
+  class AppSetting <<entity>> {
+    +id: Int
+    +key: String
+    +value: Json
+    +createdAt: DateTime
+    +updatedAt: DateTime
+  }
+}
+
+package "Rendez-vous et Consultation" {
+  class RendezVous <<entity>> {
+    +id: Int
+    +numero: String
+    +date: DateTime
+    +heure: String
+    +patientId: Int
+    +medecinId: Int
+    +type: TypeRendezVous
+    +statut: StatutRendezVous
+    +urgent_ia: Boolean
+    +motif: String?
+    +raison_refus: String?
+    +prestation_type: String?
+    +createdAt: DateTime
+    +updatedAt: DateTime
+    --
+    +confirmer()
+    +annuler()
+    +marquerPaye()
+  }
+
+  class RendezVousTransitionLog <<entity>> {
+    +id: Int
+    +rendezVousId: Int
+    +fromStatut: StatutRendezVous?
+    +toStatut: StatutRendezVous
+    +actorRole: Role?
+    +actorUserId: Int?
+    +reason: String?
+    +metadata: Json?
+    +createdAt: DateTime
+    --
+    +tracerTransition()
+  }
+
+  class Consultation <<entity>> {
+    +id: Int
+    +rendezVousId: Int?
+    +patientId: Int
+    +medecinId: Int
+    +date: DateTime
+    +heure: String
+    +type: String
+    +statut: StatutConsultation
+    +constantes: Json?
+    +diagnostic: String?
+    +observations: String?
+    +isArchived: Boolean
+    +archivedAt: DateTime?
+    +createdAt: DateTime
+    +updatedAt: DateTime
+    --
+    +demarrer()
+    +terminer()
+    +enregistrerConstantes()
+  }
+
+  class ConsultationPresence <<entity>> {
+    +id: Int
+    +consultationId: Int
+    +role: Role
+    +userId: Int
+    +lastSeenAt: DateTime
+    +createdAt: DateTime
+    +updatedAt: DateTime
+    --
+    +pingPresence()
+  }
+
+  class CreneauDisponible <<entity>> {
+    +id: Int
+    +medecinId: Int
+    +jour: Int
+    +heure: String
+    +actif: Boolean
+    --
+    +activer()
+    +desactiver()
+  }
+}
+
+package "Prescription et Prestations" {
+  class Ordonnance <<entity>> {
+    +id: Int
+    +consultationId: Int
+    +patientId: Int
+    +medecinId: Int
+    +contenu: String
+    +date_creation: DateTime
+    +isArchived: Boolean
+    +archivedAt: DateTime?
+    +createdAt: DateTime
+    +updatedAt: DateTime
+    --
+    +ajouterMedicament()
+    +archiver()
+  }
+
+  class Medicament <<entity>> {
+    +id: Int
+    +nom: String
+    +forme: String
+    +dosage: String
+    +createdAt: DateTime
+    +updatedAt: DateTime
+  }
+
+  class MedicamentOnOrdonnance <<association>> {
+    +ordonnanceId: Int
+    +medicamentId: Int
+    +posologie: String
+    +duree: String
+    +quantite: Int
+  }
+
+  class Prestation <<entity>> {
+    +id: Int
+    +consultationId: Int?
+    +patientId: Int
+    +type: String
+    +statut: StatutPrestation
+    +resultat: String?
+    +date_realisation: DateTime?
+    +isArchived: Boolean
+    +archivedAt: DateTime?
+    +createdAt: DateTime
+    +updatedAt: DateTime
+    --
+    +demander()
+    +realiser()
+    +terminer()
+  }
+}
+
+package "Paiement" {
+  class Paiement <<entity>> {
+    +id: Int
+    +patientId: Int
+    +rendezVousId: Int
+    +montant: Float
+    +methode: String
+    +statut: StatutPaiement
+    +transactionId: String?
+    +date_paiement: DateTime?
+    +isArchived: Boolean
+    +archivedAt: DateTime?
+    +createdAt: DateTime
+    +updatedAt: DateTime
+    --
+    +initier()
+    +confirmer()
+    +echouer()
+    +rembourser()
+  }
+}
+
+package "Communication" {
+  class ChatThread <<entity>> {
+    +id: Int
+    +participantAUserId: Int
+    +participantBUserId: Int
+    +lastMessageAt: DateTime
+    +createdAt: DateTime
+    +updatedAt: DateTime
+    --
+    +ouvrirThread()
+    +mettreAJourDernierMessage()
+  }
+
+  class ChatMessage <<entity>> {
+    +id: Int
+    +threadId: Int
+    +senderUserId: Int
+    +content: String
+    +readAt: DateTime?
+    +createdAt: DateTime
+    --
+    +envoyer()
+    +marquerCommeLu()
+  }
+}
+
+package "IA et Triage" {
+  class PatientTriageEvaluation <<entity>> {
+    +id: Int
+    +patientId: Int
+    +responses: Json
+    +niveau: String
+    +urgent: Boolean
+    +specialiteConseillee: String?
+    +recommandations: Json
+    +redFlags: Json
+    +needsHumanReview: Boolean
+    +orientation: String
+    +aiModel: String?
+    +createdAt: DateTime
+    --
+    +evaluer()
+    +recommanderOrientation()
+  }
+}
+
+note top of User
+Admin n'a pas de table dediee.
+Un administrateur est un User
+ayant role = admin.
+end note
+
+User "1" -- "0..1" Patient : profil patient
+User "1" -- "0..1" Medecin : profil medecin
+User "1" -- "0..1" Secretaire : profil secretaire
+User "1" -- "0..*" Notification : recoit
+User "1" -- "0..1" UserSetting : configure
+User "1" -- "0..*" ChatThread : participe
+User "1" -- "0..*" ChatMessage : envoie
+
+Medecin "1" -- "0..*" Secretaire : supervise
+Medecin "1" -- "0..*" CreneauDisponible : possede
+Medecin "1" -- "0..*" RendezVous : recoit
+Medecin "1" -- "0..*" Consultation : realise
+Medecin "1" -- "0..*" Ordonnance : redige
+
+Patient "1" -- "0..*" RendezVous : demande
+Patient "1" -- "0..*" Consultation : suit
+Patient "1" -- "0..*" Paiement : effectue
+Patient "1" -- "0..*" Prestation : beneficie
+Patient "1" -- "0..*" Ordonnance : recoit
+Patient "1" -- "0..*" PatientTriageEvaluation : lance
+
+RendezVous "1" -- "0..1" Consultation : declenche
+RendezVous "1" -- "0..1" Paiement : genere
+RendezVous "1" -- "0..*" RendezVousTransitionLog : historise
+
+Consultation "1" -- "0..1" Ordonnance : produit
+Consultation "1" -- "0..*" Prestation : prescrit
+Consultation "1" -- "0..*" ConsultationPresence : suit la presence
+
+Ordonnance "1" -- "0..*" MedicamentOnOrdonnance : contient
+Medicament "1" -- "0..*" MedicamentOnOrdonnance : est prescrit dans
+
+ChatThread "1" -- "0..*" ChatMessage : contient
+
+Role .. User
+Role .. ConsultationPresence
+Role .. RendezVousTransitionLog
+StatutRendezVous .. RendezVous
+StatutRendezVous .. RendezVousTransitionLog
+TypeRendezVous .. RendezVous
+StatutConsultation .. Consultation
+StatutPaiement .. Paiement
+StatutPrestation .. Prestation
+
+AppSetting .. UserSetting : contexte de configuration
+
+@enduml

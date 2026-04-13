@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Modal } from '@/components/Common/Modal';
 import { apiService } from '@/services/api';
 import { downloadBlobFile } from '@/lib/downloadFile';
 import { toast } from 'sonner';
@@ -63,6 +64,21 @@ interface ApiPaiement {
       email?: string;
     };
   };
+  rendezVous?: {
+    id?: number;
+    numero?: string;
+    date?: string;
+    heure?: string;
+    statut?: string;
+    medecin?: {
+      prenom?: string;
+      nom?: string;
+      specialite?: string;
+      user?: {
+        name?: string;
+      };
+    } | null;
+  } | null;
 }
 
 interface UiPaiement {
@@ -74,6 +90,12 @@ interface UiPaiement {
   reference: string;
   patientName: string;
   patientEmail: string;
+  rendezVousNumero: string;
+  rendezVousDate: string;
+  rendezVousHeure: string;
+  rendezVousStatut: string;
+  medecinName: string;
+  medecinSpecialite: string;
 }
 
 const COLORS_PIE: Record<UiMethode, string> = {
@@ -163,11 +185,46 @@ const getPatientName = (paiement: ApiPaiement): string => {
   return `Patient #${paiement.patientId || paiement.id}`;
 };
 
+const getMedecinName = (paiement: ApiPaiement): string => {
+  const explicit = (paiement.rendezVous?.medecin?.user?.name || '').trim();
+  if (explicit) return explicit;
+
+  const prenom = (paiement.rendezVous?.medecin?.prenom || '').trim();
+  const nom = (paiement.rendezVous?.medecin?.nom || '').trim();
+  const fullName = `${prenom} ${nom}`.trim();
+  return fullName || 'Médecin non défini';
+};
+
 const getInitials = (name: string): string => {
   const parts = name.trim().split(' ').filter(Boolean);
   const first = parts[0]?.charAt(0)?.toUpperCase() || '';
   const second = parts[1]?.charAt(0)?.toUpperCase() || '';
   return `${first}${second}` || 'PT';
+};
+
+const fetchUiPaiements = async (): Promise<UiPaiement[]> => {
+  const response = await apiService.get<ApiEnvelope<ApiPaiement[]> | ApiPaiement[]>('/paiements');
+  const list = unwrapPaiementList(response);
+
+  return list.map((paiement) => {
+    const paymentDate = paiement.date_paiement || paiement.createdAt || new Date().toISOString();
+    return {
+      id: String(paiement.id),
+      montant: Number(paiement.montant) || 0,
+      statut: normalizeStatus(paiement.statut),
+      methodePaiement: normalizeMethod(paiement.methode),
+      date: paymentDate,
+      reference: paiement.transactionId || `PAY-${paiement.id}`,
+      patientName: getPatientName(paiement),
+      patientEmail: paiement.patient?.user?.email || 'N/A',
+      rendezVousNumero: paiement.rendezVous?.numero || `RDV-${paiement.rendezVous?.id || paiement.id}`,
+      rendezVousDate: paiement.rendezVous?.date || paymentDate,
+      rendezVousHeure: paiement.rendezVous?.heure || '--:--',
+      rendezVousStatut: paiement.rendezVous?.statut || 'inconnu',
+      medecinName: getMedecinName(paiement),
+      medecinSpecialite: paiement.rendezVous?.medecin?.specialite || 'Non renseignée',
+    };
+  });
 };
 
 export const SecretairePaiements: React.FC = () => {
@@ -178,6 +235,9 @@ export const SecretairePaiements: React.FC = () => {
   const [filterStatut, setFilterStatut] = useState<FilterStatut>('tous');
   const [filterMethode, setFilterMethode] = useState<FilterMethode>('tous');
   const [factureOuverte, setFactureOuverte] = useState<FacturePaiement | null>(null);
+  const [paiementSelectionne, setPaiementSelectionne] = useState<UiPaiement | null>(null);
+  const [actionPaiementId, setActionPaiementId] = useState<string | null>(null);
+  const [actionPaiementType, setActionPaiementType] = useState<'confirm' | 'fail' | null>(null);
 
   useEffect(() => {
     const fetchPaiements = async () => {
@@ -185,23 +245,7 @@ export const SecretairePaiements: React.FC = () => {
       setLoadError(null);
 
       try {
-        const response = await apiService.get<ApiEnvelope<ApiPaiement[]> | ApiPaiement[]>('/paiements');
-        const list = unwrapPaiementList(response);
-
-        const mapped: UiPaiement[] = list.map((paiement) => {
-          const paymentDate = paiement.date_paiement || paiement.createdAt || new Date().toISOString();
-          return {
-            id: String(paiement.id),
-            montant: Number(paiement.montant) || 0,
-            statut: normalizeStatus(paiement.statut),
-            methodePaiement: normalizeMethod(paiement.methode),
-            date: paymentDate,
-            reference: paiement.transactionId || `PAY-${paiement.id}`,
-            patientName: getPatientName(paiement),
-            patientEmail: paiement.patient?.user?.email || 'N/A',
-          };
-        });
-
+        const mapped = await fetchUiPaiements();
         setPaiements(mapped);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Impossible de charger les paiements';
@@ -214,6 +258,13 @@ export const SecretairePaiements: React.FC = () => {
 
     void fetchPaiements();
   }, []);
+
+  const syncPaiements = (nextPaiements: UiPaiement[]) => {
+    setPaiements(nextPaiements);
+    if (paiementSelectionne) {
+      setPaiementSelectionne(nextPaiements.find((item) => item.id === paiementSelectionne.id) || null);
+    }
+  };
 
   const stats = useMemo(() => ({
     total: paiements.reduce((sum, p) => sum + p.montant, 0),
@@ -323,6 +374,52 @@ export const SecretairePaiements: React.FC = () => {
     );
   };
 
+  const getRendezVousStatusLabel = (statut: string) => {
+    if (statut === 'en_attente') return 'RDV en attente';
+    if (statut === 'confirme') return 'RDV confirmé';
+    if (statut === 'paye') return 'RDV payé';
+    if (statut === 'termine') return 'RDV terminé';
+    if (statut === 'annule') return 'RDV annulé';
+    return 'Statut RDV inconnu';
+  };
+
+  const refreshPaiements = async () => {
+    const nextPaiements = await fetchUiPaiements();
+    syncPaiements(nextPaiements);
+  };
+
+  const handleConfirmPayment = async (paiement: UiPaiement) => {
+    setActionPaiementId(paiement.id);
+    setActionPaiementType('confirm');
+    try {
+      await apiService.put(`/paiements/${paiement.id}/confirm`);
+      toast.success('Paiement vérifié et confirmé');
+      await refreshPaiements();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Validation impossible';
+      toast.error(message);
+    } finally {
+      setActionPaiementId(null);
+      setActionPaiementType(null);
+    }
+  };
+
+  const handleFailPayment = async (paiement: UiPaiement) => {
+    setActionPaiementId(paiement.id);
+    setActionPaiementType('fail');
+    try {
+      await apiService.put(`/paiements/${paiement.id}/fail`);
+      toast.success('Paiement marqué comme échoué');
+      await refreshPaiements();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Mise à jour impossible';
+      toast.error(message);
+    } finally {
+      setActionPaiementId(null);
+      setActionPaiementType(null);
+    }
+  };
+
   const handleDownloadInvoice = async (paiementId: string) => {
     try {
       const blob = await apiService.getBlob(`/paiements/${paiementId}/facture/download`);
@@ -340,7 +437,7 @@ export const SecretairePaiements: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold font-display mb-2">Gestion des Paiements 💳</h1>
-            <p className="text-white/80">Suivez et gérez tous les paiements et transactions</p>
+            <p className="text-white/80">Vérifiez les paiements liés au médecin suivi par le secrétariat</p>
           </div>
           <div className="hidden md:flex items-center gap-3">
             <Button variant="secondary" className="gap-2 bg-white/20 hover:bg-white/30 text-white border-white/20">
@@ -527,6 +624,10 @@ export const SecretairePaiements: React.FC = () => {
                           {getMethodePaiementLabel(paiement.methodePaiement)}
                         </span>
                         <span>•</span>
+                        <span>{paiement.medecinName}</span>
+                        <span>•</span>
+                        <span>{paiement.rendezVousNumero}</span>
+                        <span>•</span>
                         <span>Réf: {paiement.reference}</span>
                         <span>•</span>
                         <span>{new Date(paiement.date).toLocaleDateString('fr-FR')}</span>
@@ -539,9 +640,14 @@ export const SecretairePaiements: React.FC = () => {
                       <p className="text-xl font-bold">{formatMontant(paiement.montant)}</p>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => setPaiementSelectionne(paiement)}
+                      >
                         <Eye className="h-4 w-4" />
-                        Détails
+                        Vérifier
                       </Button>
                       <Button
                         variant="outline"
@@ -562,7 +668,7 @@ export const SecretairePaiements: React.FC = () => {
                         }
                       >
                         <Download className="h-4 w-4" />
-                        Facture
+                        Aperçu
                       </Button>
                     </div>
                   </div>
@@ -578,6 +684,89 @@ export const SecretairePaiements: React.FC = () => {
           )}
         </div>
       </Card>
+      <Modal
+        isOpen={Boolean(paiementSelectionne)}
+        onClose={() => {
+          if (actionPaiementId) return;
+          setPaiementSelectionne(null);
+        }}
+        title={paiementSelectionne ? `Vérification ${paiementSelectionne.rendezVousNumero}` : 'Vérification paiement'}
+        size="lg"
+      >
+        {paiementSelectionne ? (
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-xl border border-border bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Patient</p>
+                <p className="mt-1 font-semibold">{paiementSelectionne.patientName}</p>
+                <p className="text-sm text-muted-foreground">{paiementSelectionne.patientEmail}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Médecin</p>
+                <p className="mt-1 font-semibold">{paiementSelectionne.medecinName}</p>
+                <p className="text-sm text-muted-foreground">{paiementSelectionne.medecinSpecialite}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Rendez-vous</p>
+                <p className="mt-1 font-semibold">{paiementSelectionne.rendezVousNumero}</p>
+                <p className="text-sm text-muted-foreground">
+                  {new Date(paiementSelectionne.rendezVousDate).toLocaleDateString('fr-FR')} à {paiementSelectionne.rendezVousHeure}
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {getRendezVousStatusLabel(paiementSelectionne.rendezVousStatut)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-border bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Paiement</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <p className="font-semibold">{formatMontant(paiementSelectionne.montant)}</p>
+                  {getStatutBadge(paiementSelectionne.statut)}
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {getMethodePaiementLabel(paiementSelectionne.methodePaiement)}
+                </p>
+                <p className="text-sm text-muted-foreground">Référence: {paiementSelectionne.reference}</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-sm text-blue-900">
+              Le secrétariat peut confirmer un paiement en attente ou marquer un échec après vérification.
+            </div>
+
+            <div className="flex flex-wrap justify-end gap-3">
+              {paiementSelectionne.statut !== 'paye' ? (
+                <Button
+                  variant="outline"
+                  onClick={() => handleFailPayment(paiementSelectionne)}
+                  disabled={actionPaiementId === paiementSelectionne.id || paiementSelectionne.statut === 'echec'}
+                >
+                  {actionPaiementId === paiementSelectionne.id &&
+                  actionPaiementType === 'fail' &&
+                  paiementSelectionne.statut !== 'echec'
+                    ? 'Traitement...'
+                    : paiementSelectionne.statut === 'echec'
+                    ? 'Déjà échoué'
+                    : 'Marquer échec'}
+                </Button>
+              ) : null}
+              {paiementSelectionne.statut !== 'paye' ? (
+                <Button
+                  onClick={() => handleConfirmPayment(paiementSelectionne)}
+                  disabled={actionPaiementId === paiementSelectionne.id}
+                >
+                  {actionPaiementId === paiementSelectionne.id && actionPaiementType === 'confirm'
+                    ? 'Validation...'
+                    : 'Confirmer le paiement'}
+                </Button>
+              ) : (
+                <Button onClick={() => handleDownloadInvoice(paiementSelectionne.id)}>
+                  Télécharger la facture
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : null}
+      </Modal>
       {factureOuverte && (
         <FacturePatient
           paiement={factureOuverte}

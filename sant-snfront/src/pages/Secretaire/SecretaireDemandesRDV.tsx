@@ -24,6 +24,8 @@ interface Demande {
     nom: string;
     specialite: string;
   };
+  canValidate?: boolean | null;
+  validationReason?: string | null;
 }
 
 export const SecretaireDemandesRDV: React.FC = () => {
@@ -107,6 +109,24 @@ export const SecretaireDemandesRDV: React.FC = () => {
       default:
         return <span className="badge-default">{statut}</span>;
     }
+  };
+
+  const getValidationBadge = (demande: Demande) => {
+    if (demande.statut !== 'en_attente') return null;
+    if (demande.canValidate === true) {
+      return <span className="badge-success">Créneau libre</span>;
+    }
+    if (demande.canValidate === false) {
+      return (
+        <div className="space-y-1">
+          <span className="badge-destructive">Créneau indisponible</span>
+          {demande.validationReason ? (
+            <p className="text-xs text-red-600">{demande.validationReason}</p>
+          ) : null}
+        </div>
+      );
+    }
+    return null;
   };
 
   const filteredDemandes = useMemo(() => {
@@ -239,6 +259,7 @@ export const SecretaireDemandesRDV: React.FC = () => {
 
                   <div className="mt-3">
                     {getStatutBadge(demande.statut)}
+                    <div className="mt-2">{getValidationBadge(demande)}</div>
                   </div>
                 </div>
 
@@ -253,6 +274,7 @@ export const SecretaireDemandesRDV: React.FC = () => {
                         }}
                         variant="default"
                         className="gap-1"
+                        disabled={demande.canValidate === false}
                       >
                         <CheckCircle className="h-4 w-4" />
                         Confirmer

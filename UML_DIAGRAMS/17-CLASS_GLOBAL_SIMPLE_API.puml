@@ -1,0 +1,145 @@
+@startuml SANTE_SN_Class_Global_Simple_API
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F8F8F8
+skinparam classAttributeIconSize 0
+
+title SANTE SN - Diagramme de Classes Global Simple (API)
+
+enum Role {
+  patient
+  medecin
+  secretaire
+  admin
+}
+
+enum StatutRendezVous {
+  en_attente
+  confirme
+  termine
+  annule
+  paye
+}
+
+enum TypeRendezVous {
+  en_ligne
+  presentiel
+  prestation
+}
+
+enum StatutConsultation {
+  en_attente
+  en_cours
+  termine
+}
+
+enum StatutPaiement {
+  en_attente
+  paye
+  echoue
+  rembourse
+}
+
+class User {
+  id: Int
+  email: String
+  password: String
+  name: String
+  role: Role
+}
+
+class Patient {
+  id: Int
+  nom: String
+  prenom: String
+  telephone: String
+}
+
+class Medecin {
+  id: Int
+  nom: String
+  prenom: String
+  specialite: String
+}
+
+class Secretaire {
+  id: Int
+  nom: String
+  prenom: String
+  telephone: String
+}
+
+class RendezVous {
+  id: Int
+  numero: String
+  date: DateTime
+  heure: String
+  type: TypeRendezVous
+  statut: StatutRendezVous
+}
+
+class Consultation {
+  id: Int
+  date: DateTime
+  heure: String
+  type: String
+  statut: StatutConsultation
+  diagnostic: String
+}
+
+class Ordonnance {
+  id: Int
+  contenu: String
+  date_creation: DateTime
+}
+
+class Paiement {
+  id: Int
+  montant: Float
+  methode: String
+  statut: StatutPaiement
+}
+
+class Prestation {
+  id: Int
+  type: String
+  resultat: String
+}
+
+class CreneauDisponible {
+  id: Int
+  jour: Int
+  heure: String
+  actif: Boolean
+}
+
+class Notification {
+  id: Int
+  titre: String
+  message: String
+  lu: Boolean
+}
+
+User "1" -- "0..1" Patient
+User "1" -- "0..1" Medecin
+User "1" -- "0..1" Secretaire
+User "1" -- "0..*" Notification
+
+Medecin "1" -- "0..*" Secretaire
+Medecin "1" -- "0..*" CreneauDisponible
+
+Patient "1" -- "0..*" RendezVous
+Medecin "1" -- "0..*" RendezVous
+
+RendezVous "1" -- "0..1" Consultation
+RendezVous "1" -- "0..1" Paiement
+
+Patient "1" -- "0..*" Consultation
+Medecin "1" -- "0..*" Consultation
+
+Consultation "1" -- "0..1" Ordonnance
+Consultation "1" -- "0..*" Prestation
+
+Patient "1" -- "0..*" Paiement
+Patient "1" -- "0..*" Prestation
+
+@enduml

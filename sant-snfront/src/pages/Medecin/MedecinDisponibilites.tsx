@@ -64,7 +64,7 @@ export const MedecinDisponibilites: React.FC = () => {
     queryKey: ['medecin-creneaux', medecinId],
     enabled: Boolean(medecinId),
     queryFn: async () => {
-      const response = await apiService.get(API_ENDPOINTS.creneau.byMedecin(String(medecinId)));
+      const response = await apiService.get(`${API_ENDPOINTS.creneau.byMedecin(String(medecinId))}?includeInactive=true`);
       return extractData<Creneau[]>(response) || [];
     },
   });
@@ -73,6 +73,7 @@ export const MedecinDisponibilites: React.FC = () => {
     () =>
       [...creneaux].sort((a, b) => {
         if (a.jour !== b.jour) return a.jour - b.jour;
+        if (a.actif !== b.actif) return Number(b.actif) - Number(a.actif);
         return a.heure.localeCompare(b.heure);
       }),
     [creneaux]
@@ -138,7 +139,7 @@ export const MedecinDisponibilites: React.FC = () => {
       return apiService.delete(API_ENDPOINTS.creneau.delete(String(id)));
     },
     onSuccess: () => {
-      toast.success('Créneau supprimé');
+      toast.success('Créneau archivé');
       refetch();
     },
     onError: (error: any) => {
@@ -166,6 +167,9 @@ export const MedecinDisponibilites: React.FC = () => {
 
       <div className="card-health space-y-4">
         <h2 className="font-semibold">Ajouter un créneau</h2>
+        <p className="text-sm text-muted-foreground">
+          Les créneaux inactifs restent visibles ici pour pouvoir les réactiver plus tard.
+        </p>
         <div className="grid md:grid-cols-3 gap-3">
           <select
             value={jour}
@@ -218,7 +222,7 @@ export const MedecinDisponibilites: React.FC = () => {
               paginatedData.map((creneau) => {
                 const isEditing = editId === creneau.id;
                 return (
-                  <tr key={creneau.id} className="border-b border-border">
+                  <tr key={creneau.id} className={`border-b border-border ${!creneau.actif ? 'bg-muted/30' : ''}`}>
                     <td className="px-4 py-3 text-sm">
                       {isEditing ? (
                         <select
@@ -233,7 +237,9 @@ export const MedecinDisponibilites: React.FC = () => {
                           ))}
                         </select>
                       ) : (
-                        JOURS[creneau.jour]
+                        <span className={!creneau.actif ? 'text-muted-foreground' : ''}>
+                          {JOURS[creneau.jour]}
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm">
@@ -245,7 +251,9 @@ export const MedecinDisponibilites: React.FC = () => {
                           className="border border-input rounded px-2 py-1 bg-background"
                         />
                       ) : (
-                        creneau.heure
+                        <span className={!creneau.actif ? 'text-muted-foreground' : ''}>
+                          {creneau.heure}
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm">
@@ -254,6 +262,8 @@ export const MedecinDisponibilites: React.FC = () => {
                         className={`px-2 py-1 rounded-full text-xs ${
                           creneau.actif ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
                         }`}
+                        disabled={toggleMutation.isPending}
+                        title={creneau.actif ? 'Désactiver ce créneau' : 'Réactiver ce créneau'}
                       >
                         {creneau.actif ? 'Actif' : 'Inactif'}
                       </button>
@@ -287,6 +297,8 @@ export const MedecinDisponibilites: React.FC = () => {
                           variant="outline"
                           className="text-red-600"
                           onClick={() => deleteMutation.mutate(creneau.id)}
+                          disabled={deleteMutation.isPending || !creneau.actif}
+                          title={creneau.actif ? 'Archiver ce créneau' : 'Ce créneau est déjà archivé'}
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>

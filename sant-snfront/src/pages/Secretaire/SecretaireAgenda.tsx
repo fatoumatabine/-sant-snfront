@@ -8,10 +8,11 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import { apiService } from '@/services/api';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 type ViewMode = 'month' | 'week' | 'day';
 
-type EventStatus = 'confirme' | 'en_attente' | 'termine' | 'annule';
+type EventStatus = 'confirme' | 'en_attente' | 'termine' | 'annule' | 'paye';
 
 interface ApiEnvelope<T> {
   data?: T;
@@ -33,6 +34,25 @@ interface ApiRendezVous {
   statut?: string;
   patient?: ApiNameRef;
   medecin?: ApiNameRef;
+}
+
+interface ApiMedecinRecord {
+  name?: string;
+  prenom?: string;
+  nom?: string;
+  medecin?: {
+    id?: number;
+    prenom?: string;
+    nom?: string;
+    specialite?: string;
+  };
+}
+
+interface ApiCreneau {
+  id: number;
+  jour: number;
+  heure: string;
+  actif: boolean;
 }
 
 interface DashboardStats {
@@ -77,6 +97,17 @@ const statusLabels: Record<EventStatus, string> = {
   en_attente: 'En attente',
   termine: 'Terminé',
   annule: 'Annulé',
+  paye: 'Payé',
+};
+
+const FULL_DAY_NAMES: Record<number, string> = {
+  0: 'Dimanche',
+  1: 'Lundi',
+  2: 'Mardi',
+  3: 'Mercredi',
+  4: 'Jeudi',
+  5: 'Vendredi',
+  6: 'Samedi',
 };
 
 const emptyStats: DashboardStats = {
@@ -89,9 +120,53 @@ const emptyStats: DashboardStats = {
 const normalizeStatus = (status?: string): EventStatus => {
   const current = (status || '').toLowerCase();
   if (current === 'confirme' || current === 'confirmed') return 'confirme';
+  if (current === 'paye' || current === 'paid') return 'paye';
   if (current === 'termine' || current === 'completed') return 'termine';
   if (current === 'annule' || current === 'cancelled') return 'annule';
   return 'en_attente';
+};
+
+const startOfDay = (date: Date): Date => {
+  const normalized = new Date(date);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized;
+};
+
+const addDays = (date: Date, amount: number): Date => {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + amount);
+  return nextDate;
+};
+
+const isSameCalendarDay = (first: Date, second: Date): boolean =>
+  first.getDate() === second.getDate() &&
+  first.getMonth() === second.getMonth() &&
+  first.getFullYear() === second.getFullYear();
+
+const getWeekStart = (date: Date): Date => {
+  const normalized = startOfDay(date);
+  return addDays(normalized, -normalized.getDay());
+};
+
+const parseTimeToMinutes = (value: string): number => {
+  if (!/^\d{2}:\d{2}$/.test(value)) return 0;
+  const [hours, minutes] = value.split(':').map(Number);
+  return hours * 60 + minutes;
+};
+
+const getEventDateTime = (event: CalendarEvent): Date => {
+  const dateTime = startOfDay(event.date);
+  const totalMinutes = parseTimeToMinutes(event.startTime);
+  dateTime.setHours(Math.floor(totalMinutes / 60), totalMinutes % 60, 0, 0);
+  return dateTime;
+};
+
+const sortEventsByStartTime = (first: CalendarEvent, second: CalendarEvent): number =>
+  getEventDateTime(first).getTime() - getEventDateTime(second).getTime();
+
+const capitalizeLabel = (value: string): string => {
+  if (!value) return value;
+  return value.charAt(0).toUpperCase() + value.slice(1);
 };
 
 const formatFullName = (value?: ApiNameRef, fallback = 'Patient'): string => {
@@ -119,6 +194,22 @@ const unwrapAppointments = (payload: unknown): ApiRendezVous[] => {
   if (payload && typeof payload === 'object' && 'data' in payload) {
     const maybeData = (payload as ApiEnvelope<ApiRendezVous[]>).data;
     if (Array.isArray(maybeData)) return maybeData;
+  }
+
+  return [];
+};
+
+const unwrapCollection = <T,>(payload: unknown): T[] => {
+  if (Array.isArray(payload)) return payload as T[];
+
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    const maybeData = (payload as ApiEnvelope<T[]>).data;
+    if (Array.isArray(maybeData)) return maybeData;
+
+    if (maybeData && typeof maybeData === 'object' && 'data' in maybeData) {
+      const nested = (maybeData as ApiEnvelope<T[]>).data;
+      if (Array.isArray(nested)) return nested;
+    }
   }
 
   return [];
@@ -159,6 +250,7 @@ const toCalendarEvent = (rdv: ApiRendezVous): CalendarEvent | null => {
   if (statut === 'confirme') color = 'primary';
   if (statut === 'en_attente') color = 'warning';
   if (statut === 'termine') color = 'success';
+  if (statut === 'paye') color = 'info';
 
   const startTime = rdv.heure || '00:00';
 
@@ -178,11 +270,14 @@ const toCalendarEvent = (rdv: ApiRendezVous): CalendarEvent | null => {
 
 export const SecretaireAgenda: React.FC = () => {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [demandesEnAttente, setDemandesEnAttente] = useState<PendingDemande[]>([]);
   const [stats, setStats] = useState<DashboardStats>(emptyStats);
+  const [medecinNom, setMedecinNom] = useState<string>('');
+  const [creneauxMedecin, setCreneauxMedecin] = useState<ApiCreneau[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -190,10 +285,11 @@ export const SecretaireAgenda: React.FC = () => {
       setIsLoading(true);
 
       try {
-        const [appointmentsResponse, demandesResponse, statsResponse] = await Promise.all([
+        const [appointmentsResponse, demandesResponse, statsResponse, medecinsResponse] = await Promise.all([
           apiService.get('/secretaire/dashboard/appointments/all'),
           apiService.get('/secretaire/dashboard/demandes'),
           apiService.get('/secretaire/dashboard/stats'),
+          apiService.get('/secretaire/dashboard/medecins'),
         ]);
 
         const appointments = unwrapAppointments(appointmentsResponse)
@@ -209,9 +305,28 @@ export const SecretaireAgenda: React.FC = () => {
           heurePreferee: rdv.heure || '--:--',
         }));
 
+        const medecins = unwrapCollection<ApiMedecinRecord>(medecinsResponse);
+        const medecinRecord = medecins[0];
+        const medecinId = medecinRecord?.medecin?.id;
+        const medecinLabel =
+          medecinRecord?.name ||
+          `${medecinRecord?.medecin?.prenom || medecinRecord?.prenom || ''} ${medecinRecord?.medecin?.nom || medecinRecord?.nom || ''}`.trim();
+
+        let disponibilites: ApiCreneau[] = [];
+        if (medecinId) {
+          const creneauxResponse = await apiService.get(`/creneaux/medecin/${medecinId}?includeInactive=true`);
+          disponibilites = unwrapCollection<ApiCreneau>(creneauxResponse).sort((a, b) => {
+            if (a.jour !== b.jour) return a.jour - b.jour;
+            if (a.actif !== b.actif) return Number(b.actif) - Number(a.actif);
+            return a.heure.localeCompare(b.heure);
+          });
+        }
+
         setEvents(appointments);
         setDemandesEnAttente(demandes);
         setStats(unwrapStats(statsResponse));
+        setMedecinNom(medecinLabel ? `Dr. ${medecinLabel}` : '');
+        setCreneauxMedecin(disponibilites);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Impossible de charger l\'agenda';
         toast.error(message);
@@ -228,23 +343,32 @@ export const SecretaireAgenda: React.FC = () => {
 
   const todayEvents = useMemo(() => {
     const today = new Date();
-    return events.filter((event) =>
-      event.date.getDate() === today.getDate() &&
-      event.date.getMonth() === today.getMonth() &&
-      event.date.getFullYear() === today.getFullYear(),
-    );
+    return events.filter((event) => isSameCalendarDay(event.date, today)).sort(sortEventsByStartTime);
   }, [events]);
 
   const upcomingEvents = useMemo(
     () =>
       events
-        .filter((event) => event.date >= new Date() && event.statut !== 'termine' && event.statut !== 'annule')
-        .sort((a, b) => a.date.getTime() - b.date.getTime())
+        .filter((event) => getEventDateTime(event).getTime() >= Date.now() && event.statut !== 'termine' && event.statut !== 'annule')
+        .sort(sortEventsByStartTime)
         .slice(0, 1),
     [events],
   );
 
   const confirmedCount = useMemo(() => events.filter((event) => event.statut === 'confirme').length, [events]);
+  const activeDoctorSlots = useMemo(
+    () => creneauxMedecin.filter((creneau) => creneau.actif),
+    [creneauxMedecin]
+  );
+  const weekDays = useMemo(() => {
+    const weekStart = getWeekStart(currentDate);
+    return Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
+  }, [currentDate]);
+
+  const selectedDayEvents = useMemo(
+    () => events.filter((event) => isSameCalendarDay(event.date, currentDate)).sort(sortEventsByStartTime),
+    [currentDate, events],
+  );
 
   const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   const getFirstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
@@ -275,15 +399,50 @@ export const SecretaireAgenda: React.FC = () => {
         event.date.getDate() === date.getDate() &&
         event.date.getMonth() === date.getMonth() &&
         event.date.getFullYear() === date.getFullYear(),
+    ).sort(sortEventsByStartTime);
+  };
+
+  const getPeriodTitle = () => {
+    if (viewMode === 'month') {
+      return `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+    }
+
+    if (viewMode === 'week') {
+      const weekStart = weekDays[0];
+      const weekEnd = weekDays[6];
+      const startLabel = weekStart.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+      const endLabel = weekEnd.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+      return `Semaine du ${startLabel} au ${endLabel}`;
+    }
+
+    return capitalizeLabel(
+      currentDate.toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }),
     );
   };
 
-  const previousMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+  const goToPreviousPeriod = () => {
+    setCurrentDate((previousDate) => {
+      if (viewMode === 'month') {
+        return new Date(previousDate.getFullYear(), previousDate.getMonth() - 1, 1);
+      }
+
+      return addDays(previousDate, viewMode === 'week' ? -7 : -1);
+    });
   };
 
-  const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+  const goToNextPeriod = () => {
+    setCurrentDate((previousDate) => {
+      if (viewMode === 'month') {
+        return new Date(previousDate.getFullYear(), previousDate.getMonth() + 1, 1);
+      }
+
+      return addDays(previousDate, viewMode === 'week' ? 7 : 1);
+    });
   };
 
   return (
@@ -378,19 +537,19 @@ export const SecretaireAgenda: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <h2 className="text-xl font-bold text-gray-800">
-                  {months[currentDate.getMonth()]} {currentDate.getFullYear()}
+                  {getPeriodTitle()}
                 </h2>
                 <div className="flex gap-2">
-                  <button onClick={previousMonth} className="p-2 hover:bg-primary/10 rounded-full transition-colors text-primary">
+                  <button onClick={goToPreviousPeriod} className="p-2 hover:bg-primary/10 rounded-full transition-colors text-primary">
                     <ChevronLeft className="h-5 w-5" />
                   </button>
-                  <button onClick={nextMonth} className="p-2 hover:bg-primary/10 rounded-full transition-colors text-primary">
+                  <button onClick={goToNextPeriod} className="p-2 hover:bg-primary/10 rounded-full transition-colors text-primary">
                     <ChevronRight className="h-5 w-5" />
                   </button>
                 </div>
               </div>
               <Button
-                onClick={() => toast.info('Utilisez l\'écran Demandes RDV pour créer ou valider un rendez-vous.')}
+                onClick={() => navigate('/secretaire/demandes-rdv')}
                 className="bg-primary hover:bg-primary/90 text-white rounded-xl gap-2 shadow-md"
               >
                 <Plus className="h-4 w-4" />
@@ -399,49 +558,148 @@ export const SecretaireAgenda: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              <div className="grid grid-cols-7 gap-2">
-                {days.map((day) => (
-                  <div key={day} className="text-center text-sm font-semibold text-gray-500 py-2">
-                    {day}
+              {viewMode === 'month' && (
+                <>
+                  <div className="grid grid-cols-7 gap-2">
+                    {days.map((day) => (
+                      <div key={day} className="text-center text-sm font-semibold text-gray-500 py-2">
+                        {day}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
 
-              <div className="grid grid-cols-7 gap-2">
-                {calendarDays.map((day, idx) => {
-                  const absDay = day > 0 ? day : Math.abs(day);
-                  const eventsForDay = getEventsForDate(day > 0 ? day : null);
-                  const isCurrentMonth = day > 0;
-                  const isToday =
-                    day === new Date().getDate() &&
-                    currentDate.getMonth() === new Date().getMonth() &&
-                    currentDate.getFullYear() === new Date().getFullYear();
+                  <div className="grid grid-cols-7 gap-2">
+                    {calendarDays.map((day, idx) => {
+                      const absDay = day > 0 ? day : Math.abs(day);
+                      const eventsForDay = getEventsForDate(day > 0 ? day : null);
+                      const isCurrentMonth = day > 0;
+                      const cellDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day > 0 ? day : 1);
+                      const isToday = day > 0 && isSameCalendarDay(cellDate, new Date());
 
-                  return (
-                    <div
-                      key={idx}
-                      className={cn(
-                        'min-h-[100px] p-2 rounded-xl border transition-all',
-                        isCurrentMonth ? 'bg-white border-gray-100 hover:border-primary/30 hover:shadow-md' : 'bg-gray-50/50 border-transparent',
-                        isToday && 'ring-2 ring-primary ring-offset-2',
-                      )}
-                    >
-                      <div className={cn('text-sm font-medium mb-1', !isCurrentMonth && 'text-gray-400', isToday && 'text-primary font-bold')}>
-                        {absDay}
-                      </div>
-                      <div className="space-y-1">
-                        {eventsForDay.slice(0, 2).map((event) => (
-                          <div key={event.id} className={cn('text-xs px-2 py-1 rounded-md border font-medium truncate', colorClasses[event.color])}>
-                            {event.title}
-                            <div className="text-[10px] opacity-75 mt-0.5">{event.startTime}</div>
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            if (!isCurrentMonth) return;
+                            setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
+                            setViewMode('day');
+                          }}
+                          className={cn(
+                            'min-h-[100px] p-2 rounded-xl border transition-all text-left',
+                            isCurrentMonth
+                              ? 'bg-white border-gray-100 hover:border-primary/30 hover:shadow-md cursor-pointer'
+                              : 'bg-gray-50/50 border-transparent cursor-default',
+                            isToday && 'ring-2 ring-primary ring-offset-2',
+                          )}
+                        >
+                          <div className={cn('text-sm font-medium mb-1', !isCurrentMonth && 'text-gray-400', isToday && 'text-primary font-bold')}>
+                            {absDay}
                           </div>
-                        ))}
-                        {eventsForDay.length > 2 && <div className="text-xs text-gray-500 px-2">+{eventsForDay.length - 2} autres</div>}
+                          <div className="space-y-1">
+                            {eventsForDay.slice(0, 2).map((event) => (
+                              <div key={event.id} className={cn('text-xs px-2 py-1 rounded-md border font-medium truncate', colorClasses[event.color])}>
+                                {event.title}
+                                <div className="text-[10px] opacity-75 mt-0.5">{event.startTime}</div>
+                              </div>
+                            ))}
+                            {eventsForDay.length > 2 && <div className="text-xs text-gray-500 px-2">+{eventsForDay.length - 2} autres</div>}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              {viewMode === 'week' && (
+                <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+                  {weekDays.map((day) => {
+                    const eventsForDay = events.filter((event) => isSameCalendarDay(event.date, day)).sort(sortEventsByStartTime);
+                    const isToday = isSameCalendarDay(day, new Date());
+
+                    return (
+                      <button
+                        key={day.toISOString()}
+                        type="button"
+                        onClick={() => {
+                          setCurrentDate(day);
+                          setViewMode('day');
+                        }}
+                        className={cn(
+                          'rounded-2xl border p-4 text-left transition-all min-h-[220px]',
+                          isToday ? 'border-primary shadow-md bg-primary/5' : 'border-gray-100 hover:border-primary/30',
+                        )}
+                      >
+                        <div className="mb-4">
+                          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                            {capitalizeLabel(day.toLocaleDateString('fr-FR', { weekday: 'short' }))}
+                          </p>
+                          <p className={cn('text-lg font-semibold', isToday && 'text-primary')}>
+                            {day.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          {eventsForDay.length > 0 ? (
+                            eventsForDay.map((event) => (
+                              <div key={event.id} className={cn('rounded-xl border px-3 py-2 text-xs', colorClasses[event.color])}>
+                                <p className="font-semibold truncate">{event.patient}</p>
+                                <p className="opacity-80">{event.startTime} - {event.endTime}</p>
+                                <p className="opacity-80 truncate">{statusLabels[event.statut]}</p>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-xs text-muted-foreground">Aucun rendez-vous</p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {viewMode === 'day' && (
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-primary/10 bg-primary/5 p-4">
+                    <p className="text-sm text-muted-foreground">Vue détaillée</p>
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {capitalizeLabel(
+                        currentDate.toLocaleDateString('fr-FR', {
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        }),
+                      )}
+                    </h3>
+                  </div>
+
+                  <div className="space-y-3">
+                    {selectedDayEvents.length > 0 ? (
+                      selectedDayEvents.map((event) => (
+                        <div key={event.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-semibold text-gray-900">{event.patient}</p>
+                              <p className="text-sm text-muted-foreground">{event.medecin}</p>
+                            </div>
+                            <Badge className={cn('border text-xs', colorClasses[event.color])}>{statusLabels[event.statut]}</Badge>
+                          </div>
+                          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                            <span>{event.startTime} - {event.endTime}</span>
+                            <span>{event.motif}</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-gray-200 p-8 text-center text-sm text-muted-foreground">
+                        Aucun rendez-vous pour cette journée.
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </Card>
@@ -484,6 +742,45 @@ export const SecretaireAgenda: React.FC = () => {
               </div>
             </Card>
           )}
+
+          <Card className="card-health shadow-lg rounded-2xl">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-800">Disponibilités médecin</h3>
+                <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
+                  {activeDoctorSlots.length}
+                </Badge>
+              </div>
+              <div className="space-y-3">
+                {medecinNom ? (
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3">
+                    <p className="text-sm font-medium text-blue-900">{medecinNom}</p>
+                    <p className="text-xs text-blue-700">Créneaux visibles pour planifier et valider les demandes.</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Aucun médecin assigné à cette secrétaire.</p>
+                )}
+
+                {activeDoctorSlots.length > 0 ? (
+                  activeDoctorSlots.slice(0, 6).map((creneau) => (
+                    <div key={creneau.id} className="rounded-xl border border-border/70 bg-muted/30 px-3 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium">{FULL_DAY_NAMES[creneau.jour]}</p>
+                          <p className="text-xs text-muted-foreground">Disponibilité confirmée</p>
+                        </div>
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                          {creneau.heure}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                ) : medecinNom ? (
+                  <p className="text-sm text-muted-foreground">Aucun créneau actif configuré pour ce médecin.</p>
+                ) : null}
+              </div>
+            </div>
+          </Card>
 
           <Card className="card-health shadow-lg rounded-2xl">
             <div className="p-6">
@@ -534,7 +831,12 @@ export const SecretaireAgenda: React.FC = () => {
               </div>
               <div className="space-y-3">
                 {demandesEnAttente.slice(0, 3).map((demande) => (
-                  <div key={demande.id} className="p-3 border border-orange-100 bg-orange-50/50 rounded-xl">
+                  <button
+                    key={demande.id}
+                    type="button"
+                    onClick={() => navigate('/secretaire/demandes-rdv')}
+                    className="w-full p-3 border border-orange-100 bg-orange-50/50 rounded-xl text-left transition-colors hover:bg-orange-50"
+                  >
                     <div className="flex items-center gap-2 mb-1">
                       <User className="h-3 w-3 text-orange-600" />
                       <p className="text-sm font-medium">{demande.patientName}</p>
@@ -546,7 +848,7 @@ export const SecretaireAgenda: React.FC = () => {
                       <Clock className="h-3 w-3" />
                       {new Date(demande.datePreferee).toLocaleDateString('fr-FR')} à {demande.heurePreferee}
                     </div>
-                  </div>
+                  </button>
                 ))}
                 {demandesEnAttente.length === 0 && (
                   <p className="text-center text-muted-foreground text-sm py-4">Aucune demande en attente</p>

@@ -67,6 +67,35 @@ const resolveDisplayName = (entity: any, fallback: string): string => {
   return userName || fallback;
 };
 
+const buildCurrentUserDisplayName = (user: any, isMedecin: boolean): string => {
+  const prenom = typeof user?.prenom === 'string' ? user.prenom.trim() : '';
+  const nom = typeof user?.nom === 'string' ? user.nom.trim() : '';
+  const fullName = `${prenom} ${nom}`.trim();
+
+  if (!fullName) {
+    return isMedecin ? 'Médecin' : 'Patient';
+  }
+
+  return isMedecin ? `Dr. ${fullName}` : fullName;
+};
+
+const buildJitsiUrl = (joinUrl: string, params: { displayName: string; email?: string | null }): string => {
+  const url = new URL(joinUrl);
+  const hashParams = [
+    'config.prejoinPageEnabled=false',
+    'config.requireDisplayName=false',
+    'config.disableDeepLinking=true',
+    `userInfo.displayName=${encodeURIComponent(JSON.stringify(params.displayName))}`,
+  ];
+
+  if (params.email) {
+    hashParams.push(`userInfo.email=${encodeURIComponent(JSON.stringify(params.email))}`);
+  }
+
+  url.hash = hashParams.join('&');
+  return url.toString();
+};
+
 const toTimestamp = (dateValue?: string, heureValue?: string): number => {
   if (!dateValue) {
     return Number.POSITIVE_INFINITY;
@@ -109,6 +138,7 @@ export const VideoCall: React.FC = () => {
   const [presence, setPresence] = useState<VideoPresence | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showEmbeddedMeeting, setShowEmbeddedMeeting] = useState(false);
   const [discovery, setDiscovery] = useState<DiscoveryState>({
     isLookingUp: false,
     nextOnlineAppointment: null,
@@ -121,6 +151,24 @@ export const VideoCall: React.FC = () => {
   const baseVideoPath = isMedecin ? '/medecin/video-call' : '/patient/video-call';
   const appointmentsPath = isMedecin ? '/medecin/rendez-vous' : '/patient/rendez-vous';
   const contextAppointment = discovery.startableAppointment || discovery.nextOnlineAppointment;
+  const participantDisplayName = useMemo(() => buildCurrentUserDisplayName(user, isMedecin), [isMedecin, user]);
+  const isLocalSession = typeof window !== 'undefined'
+    && ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+  const effectiveJoinUrl = useMemo(() => {
+    if (!session?.joinUrl) return null;
+    return buildJitsiUrl(session.joinUrl, {
+      displayName: participantDisplayName,
+      email: user?.email || null,
+    });
+  }, [participantDisplayName, session?.joinUrl, user?.email]);
+
+  const openMeetingInNewTab = () => {
+    if (!effectiveJoinUrl) return;
+    const openedWindow = window.open(effectiveJoinUrl, '_blank', 'noopener,noreferrer');
+    if (!openedWindow) {
+      window.location.href = effectiveJoinUrl;
+    }
+  };
 
   const discoverActiveCall = async () => {
     setIsLoading(true);
@@ -216,6 +264,7 @@ export const VideoCall: React.FC = () => {
         throw new Error('Session vidéo non disponible');
       }
       setSession(data);
+      setShowEmbeddedMeeting(!isLocalSession);
     } catch (err: any) {
       const message = err?.message || 'Impossible de charger la session vidéo';
       setError(message);
@@ -373,7 +422,7 @@ export const VideoCall: React.FC = () => {
         {session?.joinUrl && (
           <div className="space-y-4">
             {presence && (
-              <div className="rounded-lg border border-border p-3 text-sm flex flex-wrap gap-3">
+            <div className="rounded-lg border border-border p-3 text-sm flex flex-wrap gap-3">
                 <span className={presence.medecinOnline ? 'text-green-700' : 'text-gray-500'}>
                   Médecin: {presence.medecinOnline ? 'En ligne' : 'Hors ligne'}
                 </span>
@@ -382,21 +431,53 @@ export const VideoCall: React.FC = () => {
                 </span>
               </div>
             )}
-            <div className="rounded-lg border border-border overflow-hidden">
-              <iframe
-                title="Teleconsultation"
-                src={session.joinUrl}
-                className="w-full h-[70vh]"
-                allow="camera; microphone; fullscreen; display-capture; autoplay"
-              />
-            </div>
+
+            {!showEmbeddedMeeting && effectiveJoinUrl && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-3">
+                <div className="flex items-start gap-2 text-sm text-amber-900">
+                  <AlertCircle className="h-4 w-4 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Connexion recommandée dans un nouvel onglet</p>
+                    <p>
+                      Sur l’environnement local, Jitsi est plus fiable en ouverture directe qu’en iframe intégrée.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={openMeetingInNewTab} className="gap-2">
+                    <ExternalLink className="h-4 w-4" />
+                    Ouvrir la salle vidéo
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowEmbeddedMeeting(true)}>
+                    Afficher dans cette page
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {showEmbeddedMeeting && effectiveJoinUrl && (
+              <div className="rounded-lg border border-border overflow-hidden">
+                <iframe
+                  title="Teleconsultation"
+                  src={effectiveJoinUrl}
+                  className="w-full h-[70vh]"
+                  allow="camera; microphone; fullscreen; display-capture; autoplay"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                />
+              </div>
+            )}
             <div className="flex flex-wrap gap-2">
-              <a href={session.joinUrl} target="_blank" rel="noreferrer">
+              <a href={effectiveJoinUrl || session.joinUrl} target="_blank" rel="noreferrer">
                 <Button variant="outline" className="gap-2">
                   <ExternalLink className="h-4 w-4" />
                   Ouvrir dans un nouvel onglet
                 </Button>
               </a>
+              {showEmbeddedMeeting && (
+                <Button variant="outline" onClick={() => setShowEmbeddedMeeting(false)}>
+                  Revenir au mode conseillé
+                </Button>
+              )}
               <Button variant="destructive" onClick={() => window.history.back()} className="gap-2">
                 <PhoneOff className="h-4 w-4" />
                 Quitter l’appel

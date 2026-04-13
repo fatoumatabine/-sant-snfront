@@ -62,7 +62,7 @@ const outcomes = [
 ];
 
 const ServicesPage: React.FC = () => {
-  const { data: catalog, isLoading, isError, error } = useMarketingCatalog();
+  const { data: catalog, isLoading, isError } = useMarketingCatalog();
   const resolvedCatalog = catalog ?? marketingCatalogFallback;
 
   const heroStats = [
@@ -104,7 +104,6 @@ const ServicesPage: React.FC = () => {
             {isError ? (
               <div className="rounded-[1.75rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
                 Le catalogue temps réel est momentanément indisponible. Une version de secours reste affichée pour garder la navigation fluide.
-                {error instanceof Error ? ` ${error.message}` : ''}
               </div>
             ) : null}
 

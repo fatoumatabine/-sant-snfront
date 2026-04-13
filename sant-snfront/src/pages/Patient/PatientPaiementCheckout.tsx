@@ -151,19 +151,25 @@ const PAYMENT_METHODS: PaymentMethodOption[] = [
   },
 ];
 
-const extractPayload = <T,>(response: any): T => {
+const extractPayload = <T,>(response: unknown): T => {
   if (response && typeof response === 'object' && 'data' in response) {
-    const level1 = response.data;
+    const level1 = (response as { data: unknown }).data;
     if (level1 && typeof level1 === 'object' && 'data' in level1) {
-      return level1.data as T;
+      return (level1 as { data: T }).data;
     }
     return level1 as T;
   }
   return response as T;
 };
 
-const getMethodeLabel = (methode: string) =>
-  PAYMENT_METHODS.find((option) => option.id === methode)?.label || methode;
+const isPaydunyaActivationError = (message: string) => {
+  const lower = message.toLowerCase();
+  return (
+    (lower.includes('paydunya') && lower.includes('activ')) ||
+    (lower.includes('paydunya') && lower.includes('confirm')) ||
+    lower.includes('logon to your paydunya account')
+  );
+};
 
 const getPaiementStatusBadge = (statut: PaiementStatus) => {
   const config = {
@@ -237,9 +243,11 @@ export const PatientPaiementCheckout: React.FC = () => {
   const [currentSession, setCurrentSession] = useState<{
     id: number;
     methode: string;
+    provider?: string;
     checkoutUrl?: string;
   } | null>(null);
   const [factureOuverte, setFactureOuverte] = useState<FacturePaiement | null>(null);
+  const [providerIssue, setProviderIssue] = useState<string | null>(null);
 
   const {
     data: rendezVous,
@@ -321,6 +329,8 @@ export const PatientPaiementCheckout: React.FC = () => {
   const activePaiementId = paiement?.id ?? currentSession?.id ?? null;
   const currentCheckoutUrl =
     currentSession?.methode === selectedMethod ? currentSession.checkoutUrl : undefined;
+  const isOnlineSimulationSession =
+    currentSession?.methode === selectedMethod && currentSession?.provider === 'online-simulator';
   const montant = paiement?.montant ?? resolvedRendezVous?.medecin?.tarif_consultation ?? 15000;
   const medecinNom =
     resolvedRendezVous?.medecin?.prenom && resolvedRendezVous?.medecin?.nom
@@ -365,11 +375,20 @@ export const PatientPaiementCheckout: React.FC = () => {
       }),
     onSuccess: (response) => {
       const data = extractPayload<PaiementDetail>(response);
-      setCurrentSession({
+      const nextSession = {
         id: Number(data.id),
         methode: data.methode,
+        provider: data.paymentSession?.provider,
         checkoutUrl: data.paymentSession?.checkoutUrl,
-      });
+      };
+      setCurrentSession(nextSession);
+      setProviderIssue(null);
+      if (data.paymentSession?.provider === 'online-simulator' && data.paymentSession?.checkoutUrl) {
+        toast.success('Simulation de paiement prête. Redirection en cours...');
+        window.location.assign(data.paymentSession.checkoutUrl);
+        return;
+      }
+
       toast.success(
         methodOption.kind === 'online'
           ? 'Session de paiement prête'
@@ -378,13 +397,20 @@ export const PatientPaiementCheckout: React.FC = () => {
       void refetchPaiements();
       void refetchRendezVous();
     },
-    onError: (error: Error) => {
+    onError: (error: Error, methode) => {
       if (/déjà payé/i.test(error.message)) {
         setForceAlreadyPaid(true);
         toast.info('Ce rendez-vous est déjà payé. Mise à jour de la page en cours.');
         void refetchPaiements();
         void refetchRendezVous();
         return;
+      }
+
+      const isOnlineAttempt = PAYMENT_METHODS.find((option) => option.id === methode)?.kind === 'online';
+      if (isOnlineAttempt && isPaydunyaActivationError(error.message || '')) {
+        setProviderIssue(error.message);
+      } else if (isOnlineAttempt) {
+        setProviderIssue(null);
       }
 
       toast.error(error.message || 'Impossible d’initialiser le paiement');
@@ -422,6 +448,19 @@ export const PatientPaiementCheckout: React.FC = () => {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Paiement refusé');
+    },
+  });
+
+  const simulateMutation = useMutation({
+    mutationFn: async () =>
+      apiService.post('/paiements/simuler', { rendezVousId: numericRendezVousId }),
+    onSuccess: () => {
+      toast.success('Paiement simulé avec succès');
+      void refetchPaiements();
+      void refetchRendezVous();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Simulation échouée');
     },
   });
 
@@ -468,8 +507,8 @@ export const PatientPaiementCheckout: React.FC = () => {
     verifyOnlineMutation,
   ]);
 
-  const handleInitPayment = async () => {
-    await initiateMutation.mutateAsync(selectedMethod);
+  const handleInitPayment = () => {
+    initiateMutation.mutate(selectedMethod);
   };
 
   const handleContinueToCheckout = () => {
@@ -481,16 +520,16 @@ export const PatientPaiementCheckout: React.FC = () => {
     window.location.assign(currentCheckoutUrl);
   };
 
-  const handleVerifyOnlinePayment = async () => {
+  const handleVerifyOnlinePayment = () => {
     if (!activePaiementId) {
       toast.error('Initialisez d’abord le paiement');
       return;
     }
 
-    await verifyOnlineMutation.mutateAsync(activePaiementId);
+    verifyOnlineMutation.mutate(activePaiementId);
   };
 
-  const handleConfirmOfflinePayment = async () => {
+  const handleConfirmOfflinePayment = () => {
     if (!activePaiementId) {
       toast.error('Préparez d’abord le paiement hors ligne');
       return;
@@ -501,7 +540,7 @@ export const PatientPaiementCheckout: React.FC = () => {
       return;
     }
 
-    await confirmOfflineMutation.mutateAsync({
+    confirmOfflineMutation.mutate({
       paiementId: activePaiementId,
       code: confirmationCode,
     });
@@ -517,10 +556,16 @@ export const PatientPaiementCheckout: React.FC = () => {
       const blob = await apiService.getBlob(`/paiements/${paiement.id}/facture/download`);
       downloadBlobFile(blob, `facture-${paiement.id}.pdf`);
       toast.success('Facture téléchargée');
-    } catch (error: any) {
-      toast.error(error.message || 'Téléchargement impossible');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Téléchargement impossible');
     }
   };
+
+  useEffect(() => {
+    if (!isOnlineMethod && providerIssue) {
+      setProviderIssue(null);
+    }
+  }, [isOnlineMethod, providerIssue]);
 
   if (!isValidRendezVousId) {
     return (
@@ -773,6 +818,7 @@ export const PatientPaiementCheckout: React.FC = () => {
                         onClick={() => {
                           setSelectedMethod(option.id);
                           setHasManualMethodSelection(true);
+                          setProviderIssue(null);
                         }}
                         className={`rounded-2xl border p-4 text-left transition-all ${
                           isActive
@@ -816,7 +862,7 @@ export const PatientPaiementCheckout: React.FC = () => {
                     </h2>
                     <p className="mt-2 text-muted-foreground">
                       {isOnlineMethod
-                        ? 'Une session PayDunya sera préparée pour vous rediriger vers la plateforme de paiement sécurisée.'
+                        ? 'Une session de paiement sera préparée pour vous rediriger vers la plateforme sécurisée ou la simulation locale.'
                         : 'Préparez le paiement, puis entrez le code de confirmation à 6 chiffres pour le valider.'}
                     </p>
                   </div>
@@ -856,19 +902,32 @@ export const PatientPaiementCheckout: React.FC = () => {
                       <div className="space-y-4 rounded-2xl border border-cyan-200 bg-cyan-50/70 p-5">
                         <div className="flex items-start gap-3">
                           <ShieldCheck className="mt-0.5 h-5 w-5 text-cyan-700" />
-                          <div>
-                            <h3 className="font-semibold text-cyan-900">Paiement en ligne sécurisé</h3>
-                            <p className="mt-1 text-sm text-cyan-800/90">
-                              La page prépare la session, puis vous redirige vers la plateforme partenaire pour payer.
-                            </p>
-                          </div>
+                        <div>
+                          <h3 className="font-semibold text-cyan-900">Paiement en ligne sécurisé</h3>
+                          <p className="mt-1 text-sm text-cyan-800/90">
+                            {isOnlineSimulationSession
+                              ? 'Le mode simulation locale prépare un paiement en ligne simplifié pour vos tests.'
+                              : 'La page prépare la session, puis vous redirige vers la plateforme partenaire pour payer.'}
+                          </p>
                         </div>
+                      </div>
+
+                        {providerIssue ? (
+                          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                            <p className="font-medium">Configuration du compte PayDunya requise</p>
+                            <p className="mt-1">{providerIssue}</p>
+                          </div>
+                        ) : null}
 
                         {currentCheckoutUrl ? (
                           <div className="rounded-xl border border-cyan-200 bg-white p-4">
-                            <p className="text-sm font-medium text-cyan-900">Session prête</p>
+                            <p className="text-sm font-medium text-cyan-900">
+                              {isOnlineSimulationSession ? 'Simulation prête' : 'Session prête'}
+                            </p>
                             <p className="mt-1 text-sm text-muted-foreground">
-                              Votre lien de paiement est actif. Continuez pour ouvrir la plateforme sécurisée.
+                              {isOnlineSimulationSession
+                                ? 'Le parcours de test est prêt. Continuez pour valider le paiement en ligne simulé.'
+                                : 'Votre lien de paiement est actif. Continuez pour ouvrir la plateforme sécurisée.'}
                             </p>
                             <div className="mt-4 flex flex-wrap gap-3">
                               <Button
@@ -877,7 +936,7 @@ export const PatientPaiementCheckout: React.FC = () => {
                                 disabled={initiateMutation.isPending}
                               >
                                 <ExternalLink className="h-4 w-4" />
-                                Continuer vers la plateforme
+                                {isOnlineSimulationSession ? 'Lancer la simulation' : 'Continuer vers la plateforme'}
                               </Button>
                               {activePaiementId ? (
                                 <Button
@@ -894,7 +953,7 @@ export const PatientPaiementCheckout: React.FC = () => {
                           </div>
                         ) : (
                           <div className="rounded-xl border border-dashed border-cyan-300 bg-white/70 p-4 text-sm text-cyan-900">
-                            Initialisez d’abord la transaction pour générer la session PayDunya.
+                            Initialisez d’abord la transaction pour générer la session de paiement.
                           </div>
                         )}
                       </div>
@@ -936,13 +995,26 @@ export const PatientPaiementCheckout: React.FC = () => {
                       <h3 className="font-semibold text-primary">Actions disponibles</h3>
                       <div className="mt-4 space-y-3">
                         <Button
-                          className="w-full gap-2"
-                          onClick={handleInitPayment}
-                          disabled={initiateMutation.isPending || displayRendezVous.statut !== 'confirme'}
+                          className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                          onClick={() => simulateMutation.mutate()}
+                          disabled={simulateMutation.isPending || displayRendezVous.statut !== 'confirme'}
                         >
-                          <CreditCard className="h-4 w-4" />
-                          {isOnlineMethod ? 'Initialiser le paiement en ligne' : 'Préparer le paiement'}
+                          <CheckCircle2 className="h-4 w-4" />
+                          {simulateMutation.isPending ? 'Simulation...' : 'Simuler le paiement (1 clic)'}
                         </Button>
+
+                        <div className="border-t border-border/40 pt-3">
+                          <p className="text-xs text-muted-foreground mb-3">Ou via le flux complet :</p>
+                          <Button
+                            variant="outline"
+                            className="w-full gap-2"
+                            onClick={handleInitPayment}
+                            disabled={initiateMutation.isPending || displayRendezVous.statut !== 'confirme'}
+                          >
+                            <CreditCard className="h-4 w-4" />
+                            {isOnlineMethod ? 'Initialiser le paiement en ligne' : 'Préparer le paiement'}
+                          </Button>
+                        </div>
 
                         {isOnlineMethod && activePaiementId ? (
                           <Button

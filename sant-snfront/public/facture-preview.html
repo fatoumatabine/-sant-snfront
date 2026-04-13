@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Aperçu Facture — Santé SN</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #0f1928; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; }
+    .invoice-paper { background: #fff; width: 100%; max-width: 680px; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.5); }
+    .font-display { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    /* Header */
+    .inv-header {
+      background: linear-gradient(135deg, #064e50 0%, #0C7779 45%, #1a9b8e 100%);
+      position: relative; overflow: hidden; padding: 28px 36px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .inv-header::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0; height: 20px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 20' preserveAspectRatio='none'%3E%3Cpath d='M0 20 Q200 0 400 10 Q600 20 800 5 L800 20 Z' fill='white'/%3E%3C/svg%3E") no-repeat bottom / 100% 100%;
+    }
+    .circle-deco {
+      position: absolute; border-radius: 50%; background: rgba(255,255,255,0.06);
+    }
+    .logo-box {
+      width: 52px; height: 52px; border-radius: 12px; flex-shrink: 0;
+      background: rgba(255,255,255,0.18);
+      border: 1.5px solid rgba(255,255,255,0.3);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .invoice-meta-box {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 10px; padding: 10px 14px; text-align: right;
+    }
+
+    /* Section heading */
+    .section-heading {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 12px;
+    }
+    .section-bar {
+      width: 3px; height: 18px; border-radius: 2px;
+      background: linear-gradient(180deg,#0C7779,#1a9b8e); flex-shrink: 0;
+    }
+    .section-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 10px; font-weight: 700; color: #0C7779;
+      letter-spacing: 0.12em; text-transform: uppercase;
+    }
+
+    /* Info card */
+    .info-card {
+      background: #f8fffe; border: 1px solid #d1f0ed; border-radius: 12px;
+      padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+    .info-pill-label { font-size: 10px; color: #9ca3af; font-weight: 500; margin-bottom: 2px; }
+    .info-pill-value { font-size: 11px; color: #1f2937; font-weight: 600; }
+
+    /* Table */
+    .services-table { width: 100%; border-collapse: collapse; border-radius: 12px; overflow: hidden; border: 1px solid #d1f0ed; }
+    .services-table thead tr { background: linear-gradient(135deg,#0C7779,#1a9b8e); }
+    .services-table thead th { padding: 10px 16px; color: white; font-size: 11px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; }
+    .services-table tbody td { padding: 10px 16px; font-size: 11px; color: #374151; border-top: 1px solid #f3f4f6; }
+    .services-table tbody tr.empty td { height: 32px; color: transparent; background: #f8fffe; }
+
+    /* Total box */
+    .total-strip {
+      background: linear-gradient(135deg,#0C7779,#1a9b8e);
+      border-radius: 12px; padding: 12px 18px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 8px;
+    }
+
+    /* Watermark */
+    .watermark {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      pointer-events: none; z-index: 5;
+    }
+    .watermark-text {
+      transform: rotate(-35deg);
+      border: 4px solid rgba(22,163,74,0.18); border-radius: 8px;
+      padding: 8px 28px; color: rgba(22,163,74,0.13);
+      font-size: 64px; font-weight: 900; font-family: 'Plus Jakarta Sans', sans-serif;
+      letter-spacing: 0.18em; user-select: none; line-height: 1;
+    }
+
+    /* Status badge */
+    .badge-paye { background: #dcfce7; color: #16a34a; }
+    .badge-attente { background: #fef3c7; color: #d97706; }
+
+    @media print {
+      body { background: white; padding: 0; }
+      .invoice-paper { border-radius: 0; box-shadow: none; max-width: 100%; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div style="width:100%;max-width:700px;">
+    <!-- Toolbar -->
+    <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:0 4px;">
+      <div style="display:flex;gap:8px;">
+        <button onclick="window.print()" style="background:rgba(255,255,255,0.95);border:1px solid rgba(255,255,255,0.3);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+          🖨️ Imprimer
+        </button>
+        <button onclick="window.print()" style="background:rgba(255,255,255,0.95);border:1px solid rgba(255,255,255,0.3);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+          ⬇️ Télécharger PDF
+        </button>
+      </div>
+      <span style="color:rgba(255,255,255,0.6);font-size:12px;">Aperçu — Facture Santé SN</span>
+    </div>
+
+    <!-- Invoice Paper -->
+    <div class="invoice-paper">
+
+      <!-- HEADER -->
+      <div class="inv-header">
+        <div class="circle-deco" style="top:-40px;right:-40px;width:180px;height:180px;"></div>
+        <div class="circle-deco" style="top:20px;right:40px;width:100px;height:100px;"></div>
+        <div class="circle-deco" style="bottom:-20px;left:200px;width:120px;height:120px;"></div>
+
+        <!-- Brand -->
+        <div style="display:flex;align-items:center;gap:14px;position:relative;z-index:2;">
+          <div class="logo-box">
+            <svg width="26" height="26" viewBox="0 0 22 22" fill="none">
+              <rect x="8" y="2" width="6" height="18" rx="2" fill="white"/>
+              <rect x="2" y="8" width="18" height="6" rx="2" fill="white"/>
+            </svg>
+          </div>
+          <div>
+            <p class="font-display" style="font-weight:800;color:white;letter-spacing:0.15em;font-size:18px;line-height:1.1;">SANTÉ SN</p>
+            <p style="font-size:10px;font-weight:600;letter-spacing:0.12em;color:rgba(255,255,255,0.75);">CLINIQUE MÉDICALE</p>
+            <p style="font-size:9px;color:rgba(255,255,255,0.6);margin-top:3px;">📍 123 Rue Dakar, Dakar, Sénégal</p>
+          </div>
+        </div>
+
+        <!-- Invoice meta -->
+        <div style="position:relative;z-index:2;">
+          <p class="font-display" style="font-size:26px;font-weight:800;color:white;text-align:right;letter-spacing:0.06em;">FACTURE</p>
+          <div class="invoice-meta-box" style="margin-top:8px;">
+            <p style="font-size:9px;color:rgba(255,255,255,0.7);margin-bottom:2px;">N° Facture :</p>
+            <p class="font-display" style="font-size:11px;font-weight:700;color:white;letter-spacing:0.05em;">FAC-00001</p>
+            <p style="font-size:9px;color:rgba(255,255,255,0.7);margin-top:4px;margin-bottom:2px;">Date d'émission :</p>
+            <p style="font-size:11px;font-weight:600;color:white;">13 avril 2026</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- BODY -->
+      <div style="position:relative;padding:24px 32px 32px;display:flex;flex-direction:column;gap:22px;">
+
+        <!-- Paid watermark -->
+        <div class="watermark"><div class="watermark-text">PAYÉ</div></div>
+
+        <!-- Title + Status -->
+        <div style="display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;">
+          <h1 class="font-display" style="font-size:15px;font-weight:800;color:#1a2e44;letter-spacing:0.06em;">FACTURE DE CONSULTATION</h1>
+          <span class="badge-paye" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;">
+            ✓ Payé
+          </span>
+        </div>
+
+        <!-- INFORMATIONS PATIENT -->
+        <div style="position:relative;z-index:2;">
+          <div class="section-heading">
+            <div class="section-bar"></div>
+            <span style="font-size:10px;color:#0C7779;">👤</span>
+            <span class="section-title">Informations Patient</span>
+          </div>
+          <div class="info-card">
+            <div>
+              <p class="info-pill-label">Nom complet</p>
+              <p class="info-pill-value">Patient Test 2</p>
+            </div>
+            <div>
+              <p class="info-pill-label">Téléphone</p>
+              <p class="info-pill-value">+221 77 000 0000</p>
+            </div>
+            <div>
+              <p class="info-pill-label">Email</p>
+              <p class="info-pill-value">patient2@gmail.com</p>
+            </div>
+            <div>
+              <p class="info-pill-label">Date de naissance</p>
+              <p class="info-pill-value">1 janvier 1990</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- DÉTAILS DE LA CONSULTATION -->
+        <div style="position:relative;z-index:2;">
+          <div class="section-heading">
+            <div class="section-bar"></div>
+            <span style="font-size:10px;color:#0C7779;">🩺</span>
+            <span class="section-title">Détails de la Consultation</span>
+          </div>
+          <div class="info-card">
+            <div>
+              <p class="info-pill-label">Médecin</p>
+              <p class="info-pill-value">Dr Male</p>
+            </div>
+            <div>
+              <p class="info-pill-label">Spécialité</p>
+              <p class="info-pill-value">Cardiologie</p>
+            </div>
+            <div>
+              <p class="info-pill-label">Date du rendez-vous</p>
+              <p class="info-pill-value">31 mars 2026 à 10:30</p>
+            </div>
+            <div>
+              <p class="info-pill-label">Motif</p>
+              <p class="info-pill-value">Suivi diabète et tension</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRESTATIONS -->
+        <div style="position:relative;z-index:2;">
+          <div class="section-heading">
+            <div class="section-bar"></div>
+            <span style="font-size:10px;color:#0C7779;">📋</span>
+            <span class="section-title">Prestations / Services</span>
+          </div>
+          <table class="services-table">
+            <thead>
+              <tr>
+                <th style="text-align:left;">Description</th>
+                <th style="text-align:center;width:50px;">Qté</th>
+                <th style="text-align:right;width:120px;">Montant</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Consultation médicale — <strong>Cardiologie</strong></td>
+                <td style="text-align:center;">1</td>
+                <td style="text-align:right;font-weight:700;color:#0C7779;">25 000 FCFA</td>
+              </tr>
+              <tr class="empty"><td>—</td><td></td><td></td></tr>
+              <tr class="empty"><td>—</td><td></td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- RÉCAPITULATIF -->
+        <div style="position:relative;z-index:2;">
+          <div class="section-heading">
+            <div class="section-bar"></div>
+            <span class="section-title">Récapitulatif</span>
+          </div>
+          <div style="display:flex;justify-content:flex-end;">
+            <div style="width:240px;">
+              <div style="display:flex;justify-content:space-between;font-size:11px;padding:6px 12px;color:#6b7280;">
+                <span>Sous-total</span><span style="font-weight:500;color:#374151;">25 000 FCFA</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;padding:6px 12px;color:#6b7280;border-top:1px dashed #e5e7eb;">
+                <span>TVA (0 %)</span><span style="font-weight:500;color:#374151;">0 FCFA</span>
+              </div>
+              <div class="total-strip">
+                <span class="font-display" style="font-size:13px;font-weight:800;color:white;letter-spacing:0.06em;">TOTAL DÛ</span>
+                <span class="font-display" style="font-size:14px;font-weight:800;color:white;">25 000 FCFA</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODE DE PAIEMENT -->
+        <div style="position:relative;z-index:2;">
+          <div class="section-heading">
+            <div class="section-bar"></div>
+            <span style="font-size:10px;color:#0C7779;">💳</span>
+            <span class="section-title">Mode de Paiement</span>
+          </div>
+          <div class="info-card">
+            <div>
+              <p class="info-pill-label">Méthode</p>
+              <p class="info-pill-value">Wave</p>
+            </div>
+            <div>
+              <p class="info-pill-label">Date du paiement</p>
+              <p class="info-pill-value">13 avril 2026</p>
+            </div>
+            <div>
+              <p class="info-pill-label">Référence transaction</p>
+              <p class="info-pill-value" style="font-size:10px;word-break:break-all;">SIM-2b7f7f8f-123e-4f4d-aeb4</p>
+            </div>
+            <div>
+              <p class="info-pill-label">Statut</p>
+              <p class="info-pill-value" style="color:#16a34a;">✓ Payé</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTES -->
+        <div style="position:relative;z-index:2;">
+          <div class="section-heading">
+            <div class="section-bar"></div>
+            <span style="font-size:10px;color:#0C7779;">📝</span>
+            <span class="section-title">Notes / Observations</span>
+          </div>
+          <div style="background:#f8fffe;border:1px solid #d1f0ed;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:flex-end;gap:10px;font-size:11px;color:#6b7280;">
+              <span style="white-space:nowrap;font-weight:500;">• Évaluation initiale :</span>
+              <div style="flex:1;border-bottom:1px dashed #d1d5db;margin-bottom:2px;"></div>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:10px;font-size:11px;color:#6b7280;">
+              <span style="white-space:nowrap;font-weight:500;">• Traitements recommandés :</span>
+              <div style="flex:1;border-bottom:1px dashed #d1d5db;margin-bottom:2px;"></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:11px;color:#6b7280;flex-wrap:wrap;">
+              <span style="white-space:nowrap;font-weight:500;">• Prochain rendez-vous :</span>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><span style="display:inline-block;width:12px;height:12px;border:1.5px solid #9ca3af;border-radius:3px;"></span> Oui</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><span style="display:inline-block;width:12px;height:12px;border:1.5px solid #9ca3af;border-radius:3px;"></span> Non</label>
+              <span>Date :</span>
+              <div style="flex:1;border-bottom:1px dashed #d1d5db;min-width:60px;margin-bottom:2px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Signatures -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;padding-top:8px;position:relative;z-index:2;">
+          <div style="text-align:center;">
+            <div style="width:140px;border-bottom:1.5px solid #d1d5db;margin-bottom:4px;"></div>
+            <p style="font-size:9px;color:#9ca3af;">Signature du patient</p>
+          </div>
+          <div style="text-align:center;">
+            <div style="width:140px;border-bottom:1.5px solid #d1d5db;margin-bottom:4px;"></div>
+            <p style="font-size:9px;color:#9ca3af;">Cachet & signature médecin</p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer style="border-top:1px solid #e6f7f5;padding-top:16px;text-align:center;position:relative;z-index:2;">
+          <div style="display:inline-flex;align-items:center;gap:6px;background:#e6f7f5;border-radius:999px;padding:4px 12px;margin-bottom:10px;">
+            <div style="width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,#0C7779,#1a9b8e);display:flex;align-items:center;justify-content:center;">
+              <svg width="8" height="8" viewBox="0 0 22 22" fill="none"><rect x="8" y="2" width="6" height="18" rx="2" fill="white"/><rect x="2" y="8" width="18" height="6" rx="2" fill="white"/></svg>
+            </div>
+            <span class="font-display" style="font-size:9px;font-weight:800;color:#0C7779;letter-spacing:0.15em;">SANTÉ SN</span>
+          </div>
+          <p style="font-size:9px;color:#9ca3af;">Ce document est une facture officielle émise par Santé SN — Clinique Médicale.</p>
+          <p style="font-size:9px;color:#9ca3af;">Pour toute question, contactez-nous au <strong>+221 33 000 0000</strong> · www.sante-sn.com</p>
+          <p style="font-size:9px;color:#b5ccd0;margin-top:6px;font-weight:500;">© 2026 Santé SN. Tous droits réservés.</p>
+        </footer>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -27,7 +27,7 @@ import { cn } from '@/lib/utils';
 import { UserRole } from '@/types';
 import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getAvatarSrc, getRoleLabel, getUserInitials } from '@/lib/avatar';
+import { getAvatarSrc, getUserInitials } from '@/lib/avatar';
 
 interface SidebarLink {
   to: string;
@@ -107,7 +107,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   if (!user) return null;
 
   const links = getLinksByRole(t)[user.role];
-  const roleLabel = getRoleLabel(user.role);
 
   return (
     <>
@@ -180,15 +179,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <p className="truncate text-xs text-white/60">{user.email}</p>
                 </div>
               </div>
-
-              <div className="mt-3 flex flex-wrap items-center gap-2 lg:max-h-0 lg:overflow-hidden lg:opacity-0 lg:transition-[max-height,opacity] lg:duration-200 lg:group-hover/sidebar:max-h-20 lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:max-h-20 lg:group-focus-within/sidebar:opacity-100">
-                <span className="rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/90">
-                  {roleLabel}
-                </span>
-                <span className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-medium text-emerald-100">
-                  Connecté
-                </span>
-              </div>
             </div>
           </div>
 
@@ -231,20 +221,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               })}
             </ul>
           </nav>
-
-          <div className="border-t border-white/10 px-4 py-4 lg:px-3">
-            <div className="rounded-[22px] border border-white/10 bg-white/5 px-3 py-3 text-xs text-white/70">
-              <div className="flex items-center justify-between gap-3 lg:flex-col lg:items-center lg:justify-center lg:group-hover/sidebar:flex-row lg:group-hover/sidebar:items-start lg:group-hover/sidebar:justify-between lg:group-focus-within/sidebar:flex-row lg:group-focus-within/sidebar:items-start lg:group-focus-within/sidebar:justify-between">
-                <div className="lg:max-w-0 lg:overflow-hidden lg:opacity-0 lg:transition-[max-width,opacity] lg:duration-200 lg:group-hover/sidebar:max-w-[140px] lg:group-hover/sidebar:opacity-100 lg:group-focus-within/sidebar:max-w-[140px] lg:group-focus-within/sidebar:opacity-100">
-                  <p className="font-semibold text-white/90">Navigation sécurisée</p>
-                  <p className="mt-1 text-[11px] text-white/60">{t('nav.lastConnection')}: {t('nav.today')}</p>
-                </div>
-                <span className="rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/90">
-                  v1
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       </aside>
     </>
