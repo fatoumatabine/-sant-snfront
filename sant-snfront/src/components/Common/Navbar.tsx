@@ -243,6 +243,16 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
                 {isDarkMode ? <Sun className="h-4 w-4 text-warning" /> : <Moon className="h-4 w-4" />}
               </button>
 
+              {/* Bouton déconnexion direct */}
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-2xl border border-white/60 bg-background/75 p-2.5 text-muted-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                title="Déconnexion"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+
               {notificationsEnabled && (
                 <div className="relative z-[56]" ref={notificationsMenuRef}>
                   <button
