@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Plus, Search, Edit2, Download, Trash2, X, Filter, RotateCcw, Eye } from 'lucide-react';
+import { Plus, Search, Edit2, Download, Trash2, X, Filter, RotateCcw, Eye, Loader2 } from 'lucide-react';
 import { OrdonnanceDocument } from '@/components/Common/OrdonnanceDocument';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiService } from '@/services/api';
@@ -77,6 +77,7 @@ export const MedecinOrdonnances: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [medicaments, setMedicaments] = useState<MedicamentInput[]>([defaultMedicament]);
   const [formData, setFormData] = useState({
     consultation_id: '',
@@ -194,12 +195,15 @@ export const MedecinOrdonnances: React.FC = () => {
   });
 
   const handleDownloadOrdonnance = async (ordonnanceId: string) => {
+    setDownloadingId(ordonnanceId);
     try {
       const blob = await apiService.getBlob(`/ordonnances/${ordonnanceId}/download`);
       downloadBlobFile(blob, `ordonnance-${ordonnanceId}.pdf`);
       toast.success('Ordonnance téléchargée');
     } catch (error: any) {
       toast.error(error.message || 'Téléchargement impossible');
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -410,11 +414,16 @@ export const MedecinOrdonnances: React.FC = () => {
                         <Eye className="h-4 w-4" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleDownloadOrdonnance(ordonnance.id)}
-                        className="p-1 hover:bg-muted rounded"
-                        title="Télécharger PDF serveur"
+                        className="p-1 hover:bg-muted rounded disabled:opacity-50"
+                        title="Télécharger PDF"
+                        disabled={downloadingId === ordonnance.id}
                       >
-                        <Download className="h-4 w-4" />
+                        {downloadingId === ordonnance.id
+                          ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : <Download className="h-4 w-4" />
+                        }
                       </button>
                       <button
                         onClick={() => handleOpenEdit(ordonnance)}
