@@ -1,0 +1,78 @@
+@startuml SANTE_SN_Use_Cases_Patient
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F4F4F4
+
+title SANTE SN - Cas d'Usage (Patient)
+
+left to right direction
+
+:Patient: as patient
+
+rectangle "SANTE SN" {
+  rectangle "Authentification" {
+    usecase "S'inscrire" as UC_P_Register
+    usecase "Se connecter" as UC_P_Login
+    usecase "Recuperer mot de passe" as UC_P_Recovery
+  }
+
+  rectangle "Triage" {
+    usecase "Evaluation triage" as UC_P_Triage
+    usecase "Consulter historique triage" as UC_P_TriageHistory
+  }
+
+  rectangle "Rendez-vous" {
+    usecase "Consulter creneaux disponibles" as UC_P_Slots
+    usecase "Prendre rendez-vous" as UC_P_BookAppointment
+    usecase "Consulter mes rendez-vous" as UC_P_ViewAppointments
+    usecase "Annuler rendez-vous" as UC_P_CancelAppointment
+  }
+
+  rectangle "Paiements" {
+    usecase "Initier paiement" as UC_P_InitiatePayment
+    usecase "Confirmer/verifier paiement" as UC_P_ConfirmPayment
+    usecase "Telecharger facture" as UC_P_DownloadInvoice
+  }
+
+  rectangle "Consultation" {
+    usecase "Rejoindre teleconsultation video" as UC_P_JoinVideoCall
+    usecase "Consulter historique consultations" as UC_P_ViewConsultations
+    usecase "Consulter ordonnances" as UC_P_ViewOrdonnances
+  }
+
+  rectangle "Communication" {
+    usecase "Envoyer message (chat)" as UC_P_SendMessage
+    usecase "Recevoir message (chat)" as UC_P_ReceiveMessage
+    usecase "Lire notifications" as UC_P_Notifications
+  }
+}
+
+patient --> UC_P_Register
+patient --> UC_P_Login
+patient --> UC_P_Recovery
+
+patient --> UC_P_Triage
+patient --> UC_P_TriageHistory
+
+patient --> UC_P_Slots
+patient --> UC_P_BookAppointment
+patient --> UC_P_ViewAppointments
+patient --> UC_P_CancelAppointment
+
+patient --> UC_P_InitiatePayment
+patient --> UC_P_ConfirmPayment
+patient --> UC_P_DownloadInvoice
+
+patient --> UC_P_JoinVideoCall
+patient --> UC_P_ViewConsultations
+patient --> UC_P_ViewOrdonnances
+
+patient --> UC_P_SendMessage
+patient --> UC_P_ReceiveMessage
+patient --> UC_P_Notifications
+
+UC_P_BookAppointment .> UC_P_Slots : <<include>>
+UC_P_ConfirmPayment .> UC_P_Notifications : <<extend>>
+UC_P_JoinVideoCall .> UC_P_Notifications : <<extend>>
+
+@enduml
+

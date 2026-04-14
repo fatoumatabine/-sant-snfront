@@ -1,0 +1,30 @@
+@startuml SANTE_SN_Sequence_Authentification
+skinparam backgroundColor #FEFEFE
+
+title SANTE_SN - Diagramme de Séquence (Authentification - Login)
+
+actor Utilisateur as user
+participant "Frontend Web\n(React)" as front
+participant "API Auth\n(Express)" as api
+participant "Auth Service" as auth
+database "PostgreSQL\n(Prisma)" as db
+
+user -> front: Saisir email + mot de passe
+front -> api: POST /api/v1/auth/login
+api -> auth: Vérifier identifiants
+auth -> db: SELECT User + profil + role
+db --> auth: user + role + profileId
+
+alt Identifiants valides
+  auth --> api: accessToken + refreshToken
+  api --> front: 200 {tokens, user}
+  front -> front: Stocker tokens
+  front --> user: Redirection dashboard (selon rôle)
+else Identifiants invalides
+  auth --> api: Erreur 401
+  api --> front: 401 message d'erreur
+  front --> user: Afficher erreur
+end
+
+@enduml
+

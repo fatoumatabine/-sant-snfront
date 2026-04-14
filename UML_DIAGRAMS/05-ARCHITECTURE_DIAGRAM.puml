@@ -1,0 +1,180 @@
+@startuml SANTE_SN_Architecture
+skinparam backgroundColor #FEFEFE
+skinparam componentBackgroundColor #F0F0F0
+
+title SANTE_SN - Architecture Générale du Système
+
+package "Clients" {
+  component "Web Frontend\n(React + TypeScript)" as web
+  component "Mobile App\n(WeChat Mini Program)" as wechat
+}
+
+package "API Layer" {
+  component "API Gateway\n(Node.js Express)" as gateway
+  component "Auth Service" as authSvc
+  component "Load Balancer" as lb
+}
+
+package "Core Services" {
+  component "Patient Service" as patientSvc
+  component "Médecin Service" as medecinSvc
+  component "RendezVous Service" as rdvSvc
+  component "Consultation Service" as consulSvc
+  component "Paiement Service" as paymentSvc
+  component "Ordonnance Service" as ordonnanceSvc
+  component "Prestation Service" as prestationSvc
+  component "Chat Service" as chatSvc
+}
+
+package "AI & Analytics" {
+  component "Triage IA" as ia
+  component "Patient Evaluation" as evaluation
+  component "Analytics Engine" as analytics
+}
+
+package "Infrastructure Services" {
+  component "Notification Service" as notifSvc
+  component "File Storage\n(S3/Cloud)" as storage
+  component "Cache Layer\n(Redis)" as cache
+  component "Queue Service\n(Bull/RabbitMQ)" as queue
+}
+
+package "Data Layer" {
+  database "PostgreSQL\n(Main DB)" as postgresql
+  database "Redis Cache" as redis
+}
+
+package "External Services" {
+  component "SMS Gateway\n(Twilio/Local)" as sms
+  component "Email Service\n(SendGrid)" as email
+  component "Payment Gateway\n(Orange Money/Porte/Wave)" as paymentGw
+  component "Cloud Storage\n(S3/GCS)" as cloudStorage
+}
+
+package "Monitoring & Logging" {
+  component "Winston Logger" as logger
+  component "ELK Stack" as elk
+  component "Prometheus\n(Metrics)" as prometheus
+}
+
+package "Admin & DevOps" {
+  component "Admin Panel" as admin
+  component "Docker/Kubernetes" as k8s
+  component "CI/CD Pipeline" as cicd
+}
+
+' Client to API
+web --> lb
+wechat --> lb
+lb --> gateway
+
+' API to Services
+gateway --> authSvc
+gateway --> patientSvc
+gateway --> medecinSvc
+gateway --> rdvSvc
+gateway --> consulSvc
+gateway --> paymentSvc
+gateway --> ordonnanceSvc
+gateway --> prestationSvc
+gateway --> chatSvc
+gateway --> notifSvc
+
+' Services to Cache
+patientSvc --> cache
+medecinSvc --> cache
+rdvSvc --> cache
+consulSvc --> cache
+chatSvc --> cache
+
+' Services to Queue
+rdvSvc --> queue
+paymentSvc --> queue
+consulSvc --> queue
+prestationSvc --> queue
+notifSvc --> queue
+
+' Services to Database
+authSvc --> postgresql
+patientSvc --> postgresql
+medecinSvc --> postgresql
+rdvSvc --> postgresql
+consulSvc --> postgresql
+paymentSvc --> postgresql
+ordonnanceSvc --> postgresql
+prestationSvc --> postgresql
+chatSvc --> postgresql
+
+' AI Services
+rdvSvc -.-> ia : Triage
+patientSvc -.-> evaluation : Évaluation
+
+' Notification Flow
+notifSvc --> sms
+notifSvc --> email
+queue --> notifSvc
+
+' File Storage
+ordonnanceSvc --> storage
+prestationSvc --> storage
+storage --> cloudStorage
+
+' Payment Flow
+paymentSvc --> paymentGw
+
+' Monitoring
+authSvc -.-> logger
+patientSvc -.-> logger
+rdvSvc -.-> logger
+consulSvc -.-> logger
+paymentSvc -.-> logger
+logger --> elk
+
+patientSvc -.-> prometheus
+rdvSvc -.-> prometheus
+consulSvc -.-> prometheus
+paymentSvc -.-> prometheus
+prometheus --> elk
+
+' Admin
+admin --> k8s
+admin --> cicd
+k8s --> gateway
+k8s --> patientSvc
+k8s --> medecinSvc
+k8s --> rdvSvc
+k8s --> consulSvc
+
+' Analytics
+analytics --> postgresql
+analytics --> cache
+
+note right of web
+  Frontend web avec:
+  - TypeScript
+  - React
+  - Vite
+  - Tailwind CSS
+  
+  Fonctionnalités:
+  - Dashboard Patient
+  - Dashboard Médecin
+  - Gestion Admin
+end note
+
+note right of wechat
+  WeChat Mini Program:
+  - Application mobile
+  - Intégration WeChat Pay
+  - Notifications push
+end note
+
+note right of iaNote
+  **AI Triage Features:**
+  - Analyse symptômes patient
+  - Recommande spécialité
+  - Évalue urgence
+  - Machine Learning (TBD)
+end note
+
+@enduml

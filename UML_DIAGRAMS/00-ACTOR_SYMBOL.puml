@@ -1,0 +1,15 @@
+@startuml SANTE_SN_UML_Actor_Symbol
+skinparam backgroundColor #FEFEFE
+
+title SANTE_SN - Acteur (symbole UML)
+
+actor "Acteur" as A
+
+note right of A
+  Un acteur représente un rôle externe
+  (personne ou système) qui interagit
+  avec l’application.
+end note
+
+@enduml
+

@@ -1,0 +1,27 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/tasks/tasks",
+    "pages/task-detail/task-detail"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fff",
+    "navigationBarTitleText": "Ma To-Do",
+    "navigationBarTextStyle": "black"
+  },
+  "tabBar": {
+    "color": "#8a8a8a",
+    "selectedColor": "#2c3e50",
+    "backgroundColor": "#fff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/tasks/tasks",
+        "text": "Tâches",
+        "iconPath": "assets/icons/tasks.png",
+        "selectedIconPath": "assets/icons/tasks-active.png"
+      }
+    ]
+  }
+}

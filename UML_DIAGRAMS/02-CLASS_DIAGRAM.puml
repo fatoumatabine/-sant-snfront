@@ -1,0 +1,349 @@
+@startuml SANTE_SN_Class_Diagram
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F0F0F0
+
+title SANTE_SN - Diagramme de Classes
+
+' Enums
+enum Role {
+  PATIENT
+  MEDECIN
+  SECRETAIRE
+  ADMIN
+}
+
+enum StatutRendezVous {
+  EN_ATTENTE
+  CONFIRME
+  TERMINE
+  ANNULE
+  PAYE
+}
+
+enum TypeRendezVous {
+  EN_LIGNE
+  PRESENTIEL
+  PRESTATION
+}
+
+enum StatutConsultation {
+  EN_ATTENTE
+  EN_COURS
+  TERMINE
+}
+
+enum StatutPaiement {
+  EN_ATTENTE
+  PAYE
+  ECHOUE
+  REMBOURSE
+}
+
+enum StatutPrestation {
+  EN_ATTENTE
+  EN_COURS
+  TERMINE
+}
+
+' Core Classes
+class User {
+  -id: Int <<PK>>
+  -email: String <<UK>>
+  -password: String
+  -name: String
+  -role: Role
+  -emailVerifiedAt: DateTime
+  -isArchived: Boolean
+  -createdAt: DateTime
+  -updatedAt: DateTime
+  --
+  +login(): void
+  +logout(): void
+  +updateProfile(): void
+}
+
+class Patient {
+  -id: Int <<PK>>
+  -userId: Int <<FK>>
+  -nom: String
+  -prenom: String
+  -telephone: String <<UK>>
+  -date_naissance: DateTime
+  -adresse: String
+  -groupe_sanguin: String
+  -diabete: Boolean
+  -hypertension: Boolean
+  -hepatite: Boolean
+  -autres_pathologies: String
+  --
+  +bookAppointment(): void
+  +viewHistory(): void
+  +makePayment(): void
+}
+
+class Medecin {
+  -id: Int <<PK>>
+  -userId: Int <<FK>>
+  -nom: String
+  -prenom: String
+  -specialite: String
+  -telephone: String
+  -adresse: String
+  -tarif_consultation: Float
+  --
+  +consultPatient(): void
+  +prescribeMedicine(): void
+  +manageSlots(): void
+  +viewAppointments(): void
+}
+
+class Secretaire {
+  -id: Int <<PK>>
+  -userId: Int <<FK>>
+  -medecinId: Int <<FK>>
+  -nom: String
+  -prenom: String
+  -telephone: String
+  --
+  +confirmAppointment(): void
+  +manageSchedule(): void
+  +processPayment(): void
+}
+
+class RendezVous {
+  -id: Int <<PK>>
+  -numero: String <<UK>>
+  -date: DateTime
+  -heure: String
+  -patientId: Int <<FK>>
+  -medecinId: Int <<FK>>
+  -type: TypeRendezVous
+  -statut: StatutRendezVous
+  -urgent_ia: Boolean
+  -motif: String
+  -raison_refus: String
+  --
+  +book(): void
+  +confirm(): void
+  +cancel(): void
+  +updateStatus(): void
+}
+
+class RendezVousTransitionLog {
+  -id: Int <<PK>>
+  -rendezVousId: Int <<FK>>
+  -fromStatut: StatutRendezVous
+  -toStatut: StatutRendezVous
+  -actorRole: Role
+  -actorUserId: Int
+  -reason: String
+  -createdAt: DateTime
+}
+
+class Consultation {
+  -id: Int <<PK>>
+  -rendezVousId: Int <<FK>>
+  -patientId: Int <<FK>>
+  -medecinId: Int <<FK>>
+  -date: DateTime
+  -heure: String
+  -type: String
+  -statut: StatutConsultation
+  -constantes: Json
+  -diagnostic: String
+  -observations: String
+  --
+  +start(): void
+  +finish(): void
+  +recordConstantes(): void
+}
+
+class ConsultationPresence {
+  -id: Int <<PK>>
+  -consultationId: Int <<FK>>
+  -role: Role
+  -userId: Int
+  -lastSeenAt: DateTime
+  --
+  +recordPresence(): void
+}
+
+class Ordonnance {
+  -id: Int <<PK>>
+  -consultationId: Int <<FK>>
+  -patientId: Int <<FK>>
+  -medecinId: Int <<FK>>
+  -contenu: String
+  -date_creation: DateTime
+  --
+  +addMedicine(): void
+  +save(): void
+}
+
+class Medicament {
+  -id: Int <<PK>>
+  -nom: String
+  -forme: String
+  -dosage: String
+  --
+  +getMedicamentInfo(): Json
+}
+
+class MedicamentOnOrdonnance {
+  -ordonnanceId: Int <<PK, FK>>
+  -medicamentId: Int <<PK, FK>>
+  -posologie: String
+  -duree: String
+  -quantite: Int
+}
+
+class Paiement {
+  -id: Int <<PK>>
+  -patientId: Int <<FK>>
+  -rendezVousId: Int <<FK>>
+  -montant: Float
+  -methode: String
+  -statut: StatutPaiement
+  -transactionId: String
+  -date_paiement: DateTime
+  --
+  +initiate(): void
+  +confirm(): void
+  +fail(): void
+  +refund(): void
+}
+
+class Prestation {
+  -id: Int <<PK>>
+  -consultationId: Int <<FK>>
+  -patientId: Int <<FK>>
+  -type: String
+  -statut: StatutPrestation
+  -resultat: String
+  -date_realisation: DateTime
+  --
+  +request(): void
+  +perform(): void
+  +completeService(): void
+}
+
+class CreneauDisponible {
+  -id: Int <<PK>>
+  -medecinId: Int <<FK>>
+  -jour: Int
+  -heure: String
+  -actif: Boolean
+  --
+  +addSlot(): void
+  +removeSlot(): void
+  +updateStatus(): void
+}
+
+class Notification {
+  -id: Int <<PK>>
+  -userId: Int <<FK>>
+  -titre: String
+  -message: String
+  -lu: Boolean
+  -createdAt: DateTime
+  --
+  +send(): void
+  +markAsRead(): void
+}
+
+class ChatThread {
+  -id: Int <<PK>>
+  -participantAUserId: Int <<FK>>
+  -participantBUserId: Int <<FK>>
+  -lastMessageAt: DateTime
+  --
+  +createThread(): void
+  +getMessages(): List
+}
+
+class ChatMessage {
+  -id: Int <<PK>>
+  -threadId: Int <<FK>>
+  -senderUserId: Int <<FK>>
+  -content: String
+  -readAt: DateTime
+  -createdAt: DateTime
+  --
+  +sendMessage(): void
+  +markAsRead(): void
+}
+
+class PatientTriageEvaluation {
+  -id: Int <<PK>>
+  -patientId: Int <<FK>>
+  -responses: Json
+  -niveau: String
+  -urgent: Boolean
+  -specialiteConseillee: String
+  -recommandations: Json
+  --
+  +evaluate(): void
+  +getRecommendations(): Json
+}
+
+class AppSetting {
+  -id: Int <<PK>>
+  -key: String <<UK>>
+  -value: Json
+  --
+  +getSetting(): Json
+  +setSetting(): void
+}
+
+class UserSetting {
+  -id: Int <<PK>>
+  -userId: Int <<FK>>
+  -value: Json
+  --
+  +updateSetting(): void
+}
+
+' Relationships
+User "1" -- "1" Patient : has
+User "1" -- "1" Medecin : has
+User "1" -- "1" Secretaire : has
+User "1" -- "*" Notification : receives
+User "1" -- "*" ChatMessage : sends
+User "1" -- "*" ChatThread : participates
+
+Patient "1" -- "*" RendezVous : books
+Patient "1" -- "*" Consultation : attends
+Patient "1" -- "*" Paiement : makes
+Patient "1" -- "*" Prestation : requests
+Patient "1" -- "*" PatientTriageEvaluation : has
+
+Medecin "1" -- "*" RendezVous : schedules
+Medecin "1" -- "*" Consultation : conducts
+Medecin "1" -- "*" Ordonnance : prescribes
+Medecin "1" -- "*" CreneauDisponible : manages
+Medecin "1" -- "*" Secretaire : employs
+
+Secretaire "1" -- "*" RendezVous : manages
+
+RendezVous "1" -- "1" Consultation : generates
+RendezVous "1" -- "1" Paiement : requires
+RendezVous "1" -- "*" RendezVousTransitionLog : logs
+
+Consultation "1" -- "1" Ordonnance : creates
+Consultation "1" -- "*" ConsultationPresence : tracks
+Consultation "1" -- "*" Prestation : includes
+
+Ordonnance "*" -- "*" Medicament : includes
+Ordonnance "1" -- "*" MedicamentOnOrdonnance : bridges
+
+Prestation "1" -- "0..1" Consultation : belongs_to
+
+ChatThread "1" -- "*" ChatMessage : contains
+ChatMessage "1" -- "1" User : from
+
+PatientTriageEvaluation "1" -- "1" Patient : evaluates
+
+User "1" -- "1" UserSetting : has_settings
+AppSetting "0..1" -- "*" User : applies_to
+
+@enduml

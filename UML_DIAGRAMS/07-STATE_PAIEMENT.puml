@@ -1,0 +1,19 @@
+@startuml SANTE_SN_State_Paiement
+skinparam backgroundColor #FEFEFE
+skinparam stateBackgroundColor #F0F0F0
+
+title SANTE_SN - Machine d'etats (Paiement)
+
+[*] --> en_attente : initier (patient)
+
+en_attente --> paye : confirmation (provider/webhook) \nou confirmation manuelle
+en_attente --> echoue : echec (provider) \nou fail admin/secretaire
+
+echoue --> en_attente : nouvelle tentative (initier)
+
+paye --> rembourse : remboursement (optionnel/futur)
+
+rembourse --> [*]
+paye --> [*]
+
+@enduml

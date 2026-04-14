@@ -1,0 +1,33 @@
+@startuml SANTE_SN_State_RendezVous
+skinparam backgroundColor #FEFEFE
+skinparam stateBackgroundColor #F0F0F0
+
+title SANTE_SN - Machine d'etats (Rendez-vous)
+
+[*] --> en_attente : creer RDV (patient)
+
+en_attente --> confirme : confirmer (secretaire/admin)
+en_attente --> annule : annuler
+
+confirme --> paye : payer (patient)
+confirme --> annule : annuler
+confirme --> termine : terminer (medecin/admin)
+
+paye --> termine : terminer (medecin/admin)
+
+annule --> [*]
+termine --> [*]
+
+note right of en_attente
+  RDV cree, en attente de validation.
+end note
+
+note right of confirme
+  RDV confirme, paiement autorise.
+end note
+
+note right of paye
+  RDV paye, consultation demarrable.
+end note
+
+@enduml

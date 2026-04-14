@@ -1,0 +1,330 @@
+@startuml SantSN_Class_Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F8F9FA
+skinparam classBorderColor #343A40
+skinparam classHeaderBackgroundColor #E9ECEF
+skinparam classArrowColor #007BFF
+skinparam noteBackgroundColor #FFF3CD
+skinparam noteBorderColor #FFC107
+
+title **SantSN - Système de Gestion de Santé**
+subtitle **Diagramme de Classes - Version Mémoire**
+
+package "Utilisateurs" {
+  abstract class User {
+    +id: Long
+    +email: String
+    +password: String
+    +name: String
+    +role: Role
+    +emailVerifiedAt: DateTime
+    +isArchived: Boolean
+    +createdAt: DateTime
+    +updatedAt: DateTime
+    --
+    +login(): void
+    +logout(): void
+    +updateProfile(): void
+  }
+
+  class Patient {
+    +nom: String
+    +prenom: String
+    +telephone: String
+    +date_naissance: DateTime
+    +adresse: String
+    +groupe_sanguin: String
+    +diabete: Boolean
+    +hypertension: Boolean
+    +hepatite: Boolean
+    +autres_pathologies: String
+    --
+    +bookAppointment(): void
+    +viewHistory(): void
+    +makePayment(): void
+  }
+
+  class Medecin {
+    +nom: String
+    +prenom: String
+    +specialite: String
+    +telephone: String
+    +adresse: String
+    +tarif_consultation: Float
+    --
+    +consultPatient(): void
+    +prescribeMedicine(): void
+    +manageSlots(): void
+    +viewAppointments(): void
+  }
+
+  class Secretaire {
+    +nom: String
+    +prenom: String
+    +telephone: String
+    +medecinId: Long
+    --
+    +confirmAppointment(): void
+    +manageSchedule(): void
+    +processPayment(): void
+  }
+
+  class Admin {
+    +permissions: List<String>
+    --
+    +manageSystem(): void
+    +configureSettings(): void
+  }
+}
+
+package "Entités Métier" {
+  class RendezVous {
+    +numero: String
+    +date: DateTime
+    +heure: String
+    +type: TypeRendezVous
+    +statut: StatutRendezVous
+    +urgent_ia: Boolean
+    +motif: String
+    +raison_refus: String
+    +prestation_type: String
+    --
+    +book(): void
+    +confirm(): void
+    +cancel(): void
+    +updateStatus(): void
+  }
+
+  class Consultation {
+    +date: DateTime
+    +heure: String
+    +type: String
+    +statut: StatutConsultation
+    +constantes: Json
+    +diagnostic: String
+    +observations: String
+    --
+    +start(): void
+    +finish(): void
+    +recordConstantes(): void
+  }
+
+  class Ordonnance {
+    +contenu: String
+    +date_creation: DateTime
+    +validiteJours: Integer
+    --
+    +addMedicine(): void
+    +save(): void
+  }
+
+  class Paiement {
+    +montant: Float
+    +methode: String
+    +statut: StatutPaiement
+    +transactionId: String
+    +date_paiement: DateTime
+    --
+    +initiate(): void
+    +confirm(): void
+    +fail(): void
+    +refund(): void
+  }
+
+  class Prestation {
+    +type: String
+    +statut: StatutPrestation
+    +resultat: String
+    +date_realisation: DateTime
+    --
+    +request(): void
+    +perform(): void
+    +completeService(): void
+  }
+}
+
+package "Entités Support" {
+  class Medicament {
+    +nom: String
+    +forme: String
+    +dosage: String
+    --
+    +getMedicamentInfo(): Json
+  }
+
+  class CreneauDisponible {
+    +jour: Integer
+    +heure: String
+    +actif: Boolean
+    --
+    +addSlot(): void
+    +removeSlot(): void
+    +updateStatus(): void
+  }
+
+  class Notification {
+    +titre: String
+    +message: String
+    +lu: Boolean
+    --
+    +send(): void
+    +markAsRead(): void
+  }
+
+  class ChatThread {
+    +lastMessageAt: DateTime
+    --
+    +createThread(): void
+    +getMessages(): List<ChatMessage>
+  }
+
+  class ChatMessage {
+    +content: String
+    +readAt: DateTime
+    --
+    +sendMessage(): void
+    +markAsRead(): void
+  }
+
+  class PatientTriageEvaluation {
+    +responses: Json
+    +niveau: String
+    +urgent: Boolean
+    +specialiteConseillee: String
+    +recommandations: Json
+    --
+    +evaluate(): void
+    +getRecommendations(): Json
+  }
+}
+
+package "Entités Système" {
+  class RendezVousTransitionLog {
+    +fromStatut: StatutRendezVous
+    +toStatut: StatutRendezVous
+    +actorRole: Role
+    +actorUserId: Long
+    +reason: String
+    +metadata: Json
+    --
+    +logTransition(): void
+  }
+
+  class ConsultationPresence {
+    +role: Role
+    +userId: Long
+    +lastSeenAt: DateTime
+    --
+    +recordPresence(): void
+  }
+
+  class AppSetting {
+    +key: String
+    +value: Json
+    --
+    +getSetting(): Json
+    +setSetting(): void
+  }
+
+  class UserSetting {
+    +value: Json
+    --
+    +updateSetting(): void
+  }
+}
+
+' Enums
+enum Role {
+  PATIENT
+  MEDECIN
+  SECRETAIRE
+  ADMIN
+}
+
+enum StatutRendezVous {
+  EN_ATTENTE
+  CONFIRME
+  TERMINE
+  ANNULE
+  PAYE
+}
+
+enum TypeRendezVous {
+  EN_LIGNE
+  PRESENTIEL
+  PRESTATION
+}
+
+enum StatutConsultation {
+  EN_ATTENTE
+  EN_COURS
+  TERMINE
+}
+
+enum StatutPaiement {
+  EN_ATTENTE
+  PAYE
+  ECHOUE
+  REMBOURSE
+}
+
+enum StatutPrestation {
+  EN_ATTENTE
+  EN_COURS
+  TERMINE
+}
+
+' Relationships
+User <|-- Patient
+User <|-- Medecin
+User <|-- Secretaire
+User <|-- Admin
+
+User ||--o{ RendezVous : "crée"
+User ||--o{ Consultation : "participe"
+User ||--o{ Notification : "reçoit"
+User ||--o{ ChatMessage : "envoie"
+User ||--o{ ChatThread : "participe"
+
+Patient ||--o{ RendezVous : "prend"
+Patient ||--o{ Consultation : "subit"
+Patient ||--o{ Paiement : "effectue"
+Patient ||--o{ Prestation : "demande"
+Patient ||--o{ Ordonnance : "reçoit"
+Patient ||--o{ PatientTriageEvaluation : "a"
+
+Medecin ||--o{ RendezVous : "reçoit"
+Medecin ||--o{ Consultation : "conduit"
+Medecin ||--o{ Ordonnance : "prescrit"
+Medecin ||--o{ CreneauDisponible : "gère"
+Medecin ||--|| Secretaire : "emploie"
+
+Secretaire ||--o{ RendezVous : "gère"
+
+RendezVous ||--o{ Consultation : "génère"
+RendezVous ||--o{ Paiement : "nécessite"
+RendezVous ||--o{ RendezVousTransitionLog : "enregistre"
+
+Consultation ||--o{ Ordonnance : "crée"
+Consultation ||--o{ ConsultationPresence : "traque"
+Consultation ||--o{ Prestation : "inclut"
+
+Ordonnance }o--o{ Medicament : "contient"
+
+Prestation ||--o{ Consultation : "appartient_à"
+
+ChatThread ||--o{ ChatMessage : "contient"
+ChatMessage ||--|| User : "depuis"
+
+PatientTriageEvaluation ||--|| Patient : "évalue"
+
+User ||--|| UserSetting : "a_paramètres"
+AppSetting ||--o{ User : "s'applique_à"
+
+note top of User : "Classe abstraite représentant\nl'utilisateur système"
+note right of RendezVous : "Gère la prise de rendez-vous\nen ligne et physique"
+note bottom of Consultation : "Représente une consultation\nmédicale avec son historique"
+note left of Ordonnance : "Ordonnance électronique\navec gestion des médicaments"
+
+@enduml

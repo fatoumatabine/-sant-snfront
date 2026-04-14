@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "Mes Tâches",
+  "usingComponents": {
+    "task-item": "/components/task-item/task-item"
+  }
+}
