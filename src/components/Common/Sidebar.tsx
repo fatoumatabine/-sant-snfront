@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import type { TFunction } from 'i18next';
 import {
   Archive,
   BarChart3,
@@ -35,7 +36,7 @@ interface SidebarLink {
   label: string;
 }
 
-const getLinksByRole = (t: any): Record<UserRole, SidebarLink[]> => ({
+const getLinksByRole = (t: TFunction): Record<UserRole, SidebarLink[]> => ({
   patient: [
     { to: '/patient/dashboard', icon: <LayoutDashboard className="h-5 w-5" />, label: t('nav.dashboard') },
     { to: '/patient/demander-rdv', icon: <Plus className="h-5 w-5" />, label: t('nav.requestAppointment') },
@@ -168,7 +169,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="mt-4 rounded-[24px] border border-white/10 bg-white/5 p-3 shadow-inner shadow-black/10">
               <div className="flex min-w-0 items-center gap-3 lg:flex-col lg:items-center lg:justify-center lg:gap-0 lg:group-hover/sidebar:flex-row lg:group-hover/sidebar:justify-start lg:group-hover/sidebar:gap-3 lg:group-focus-within/sidebar:flex-row lg:group-focus-within/sidebar:justify-start lg:group-focus-within/sidebar:gap-3">
                 <Avatar className="h-12 w-12 rounded-2xl border border-white/15 shadow-md">
-                  <AvatarImage src={getAvatarSrc(user.avatar)} alt={`${user.prenom} ${user.nom}`} />
+                  <AvatarImage src={getAvatarSrc(user.avatar)} alt={`${user.prenom} ${user.nom}`} className="object-cover" />
                   <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-lg font-bold text-white">
                     {getUserInitials(user.prenom, user.nom, user.email)}
                   </AvatarFallback>

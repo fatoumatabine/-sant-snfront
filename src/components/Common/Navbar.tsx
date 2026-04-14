@@ -223,7 +223,7 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
           <div className="relative flex h-16 items-center justify-between gap-3 md:h-20">
             <div className="flex min-w-0 items-center gap-3 md:gap-4">
               <Avatar className="h-11 w-11 rounded-[18px] border border-white/70 shadow-md">
-                <AvatarImage src={getAvatarSrc(user.avatar)} alt={`${user.prenom} ${user.nom}`} />
+                <AvatarImage src={getAvatarSrc(user.avatar)} alt={`${user.prenom} ${user.nom}`} className="object-cover" />
                 <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-sm font-semibold text-white">
                   {getUserInitials(user.prenom, user.nom, user.email)}
                 </AvatarFallback>
@@ -396,7 +396,7 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
                   className="flex items-center gap-3 rounded-[22px] border border-white/60 bg-background/75 px-3 py-2 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-background"
                 >
                   <Avatar className="h-9 w-9 rounded-xl border border-border/60">
-                    <AvatarImage src={getAvatarSrc(user.avatar)} alt={`${user.prenom} ${user.nom}`} />
+                    <AvatarImage src={getAvatarSrc(user.avatar)} alt={`${user.prenom} ${user.nom}`} className="object-cover" />
                     <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
                       {getUserInitials(user.prenom, user.nom, user.email)}
                     </AvatarFallback>
@@ -418,7 +418,7 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
                     <div className="rounded-[20px] border border-border/70 bg-muted/25 p-3">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-11 w-11 rounded-2xl border border-white/70 shadow-sm">
-                          <AvatarImage src={getAvatarSrc(user.avatar)} alt={`${user.prenom} ${user.nom}`} />
+                          <AvatarImage src={getAvatarSrc(user.avatar)} alt={`${user.prenom} ${user.nom}`} className="object-cover" />
                           <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-sm font-semibold text-white">
                             {getUserInitials(user.prenom, user.nom, user.email)}
                           </AvatarFallback>

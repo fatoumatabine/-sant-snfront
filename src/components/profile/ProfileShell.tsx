@@ -50,7 +50,7 @@ interface ProfileShellProps {
   summaryItems?: ProfileSummaryItem[];
   personalTab: React.ReactNode;
   securityTab?: React.ReactNode;
-  onAvatarChange?: (value: string | null) => void;
+  onAvatarChange?: (value: string | null) => void | Promise<void>;
   avatarDisabled?: boolean;
   onLogout?: () => void;
   helperNote?: React.ReactNode;
@@ -113,13 +113,24 @@ export const ProfileShell: React.FC<ProfileShellProps> = ({
       return;
     }
 
+    let nextAvatar: string;
+
     try {
-      const nextAvatar = await fileToAvatarDataUrl(file);
-      onAvatarChange(nextAvatar);
-      toast.success('Photo de profil prête à être enregistrée');
+      nextAvatar = await fileToAvatarDataUrl(file);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Impossible d'importer l'image");
+      return;
     }
+
+    await onAvatarChange(nextAvatar);
+  };
+
+  const handleAvatarRemoval = () => {
+    if (!onAvatarChange) {
+      return;
+    }
+
+    void onAvatarChange(null);
   };
 
   return (
@@ -222,7 +233,7 @@ export const ProfileShell: React.FC<ProfileShellProps> = ({
                     type="button"
                     variant="ghost"
                     className="w-full rounded-2xl text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => onAvatarChange?.(null)}
+                    onClick={handleAvatarRemoval}
                     disabled={avatarDisabled || !onAvatarChange}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
