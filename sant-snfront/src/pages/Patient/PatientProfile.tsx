@@ -26,6 +26,16 @@ type PatientProfileApi = {
   };
 };
 
+const unwrapPatientProfile = (
+  payload: { data: PatientProfileApi } | PatientProfileApi
+): PatientProfileApi => {
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    return payload.data;
+  }
+
+  return payload;
+};
+
 export const PatientProfile: React.FC = () => {
   const { user, setUser, logout } = useAuthStore();
   const [profileForm, setProfileForm] = useState({
@@ -40,6 +50,7 @@ export const PatientProfile: React.FC = () => {
     newPassword: '',
     confirmPassword: '',
   });
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
 
   const {
     data: profile,
@@ -48,8 +59,8 @@ export const PatientProfile: React.FC = () => {
   } = useQuery({
     queryKey: ['patient-profile'],
     queryFn: async () => {
-      const response: any = await apiService.get('/patient/profile');
-      return (response.data || response) as PatientProfileApi;
+      const response = await apiService.get<{ data: PatientProfileApi } | PatientProfileApi>('/patient/profile');
+      return unwrapPatientProfile(response);
     },
   });
 
@@ -74,8 +85,8 @@ export const PatientProfile: React.FC = () => {
         avatarUrl: profileForm.avatarUrl,
       });
     },
-    onSuccess: (response: any) => {
-      const updated = (response?.data || response) as PatientProfileApi;
+    onSuccess: (response: { data: PatientProfileApi } | PatientProfileApi) => {
+      const updated = unwrapPatientProfile(response);
       if (user) {
         setUser({
           ...user,
@@ -122,6 +133,52 @@ export const PatientProfile: React.FC = () => {
     updateProfileMutation.mutate();
   };
 
+  const handleAvatarChange = async (avatarUrl: string | null) => {
+    const previousAvatar = profileForm.avatarUrl || user?.avatar || null;
+
+    setProfileForm((prev) => ({ ...prev, avatarUrl }));
+
+    if (user) {
+      setUser({
+        ...user,
+        avatar: avatarUrl || undefined,
+      });
+    }
+
+    try {
+      setIsSavingAvatar(true);
+      const response = await apiService.put(API_ENDPOINTS.patient.updateProfile, {
+        avatarUrl,
+      });
+      const updated = (response?.data || response) as PatientProfileApi;
+      const storedAvatar = updated.user?.avatarUrl || null;
+
+      setProfileForm((prev) => ({ ...prev, avatarUrl: storedAvatar }));
+
+      if (user) {
+        setUser({
+          ...user,
+          avatar: storedAvatar || undefined,
+        });
+      }
+
+      toast.success(storedAvatar ? 'Photo de profil mise à jour' : 'Photo de profil supprimée');
+    } catch (error) {
+      setProfileForm((prev) => ({ ...prev, avatarUrl: previousAvatar }));
+
+      if (user) {
+        setUser({
+          ...user,
+          avatar: previousAvatar || undefined,
+        });
+      }
+
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la mise à jour de la photo');
+    } finally {
+      setIsSavingAvatar(false);
+    }
+  };
+
   const handleChangePassword = () => {
     if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
       toast.error('Tous les champs mot de passe sont obligatoires');
@@ -159,8 +216,8 @@ export const PatientProfile: React.FC = () => {
       name={`${profileForm.prenom} ${profileForm.nom}`.trim() || `${user?.prenom || ''} ${user?.nom || ''}`.trim()}
       email={profileForm.email || user?.email || ''}
       avatar={profileForm.avatarUrl || user?.avatar || null}
-      onAvatarChange={(value) => setProfileForm((prev) => ({ ...prev, avatarUrl: value }))}
-      avatarDisabled={updateProfileMutation.isPending}
+      onAvatarChange={handleAvatarChange}
+      avatarDisabled={updateProfileMutation.isPending || isSavingAvatar}
       onLogout={handleLogout}
       heroStats={[
         { label: 'Rôle', value: 'Patient' },
@@ -198,14 +255,14 @@ export const PatientProfile: React.FC = () => {
                   });
                 }}
                 className="flex-1 rounded-2xl"
-                disabled={updateProfileMutation.isPending}
+                disabled={updateProfileMutation.isPending || isSavingAvatar}
               >
                 Annuler
               </Button>
               <Button
                 className="flex-1 rounded-2xl"
                 onClick={handleSaveProfile}
-                disabled={updateProfileMutation.isPending}
+                disabled={updateProfileMutation.isPending || isSavingAvatar}
               >
                 {updateProfileMutation.isPending ? 'Enregistrement...' : 'Enregistrer les modifications'}
               </Button>

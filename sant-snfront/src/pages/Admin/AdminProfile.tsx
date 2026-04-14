@@ -22,6 +22,7 @@ export const AdminProfile: React.FC = () => {
   const { user, setUser, logout } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
 
   const [profileData, setProfileData] = useState({
@@ -98,6 +99,57 @@ export const AdminProfile: React.FC = () => {
     }
   };
 
+  const handleAvatarChange = async (avatarUrl: string | null) => {
+    const previousAvatar = profileData.avatarUrl || user?.avatar || null;
+
+    setProfileData((prev) => ({ ...prev, avatarUrl }));
+
+    if (user) {
+      setUser({
+        ...user,
+        avatar: avatarUrl || undefined,
+      });
+    }
+
+    try {
+      setIsSavingAvatar(true);
+
+      const response = await apiService.put(API_ENDPOINTS.auth.updateMe, {
+        firstName: user?.prenom || profileData.firstName,
+        lastName: user?.nom || profileData.lastName,
+        email: user?.email || profileData.email,
+        avatarUrl,
+      });
+
+      const updated = (response.data || response) as AuthMeResponse;
+      const storedAvatar = updated.avatarUrl || null;
+
+      setProfileData((prev) => ({ ...prev, avatarUrl: storedAvatar }));
+
+      if (user) {
+        setUser({
+          ...user,
+          avatar: storedAvatar || undefined,
+        });
+      }
+
+      toast.success(storedAvatar ? 'Photo de profil mise à jour' : 'Photo de profil supprimée');
+    } catch (error) {
+      setProfileData((prev) => ({ ...prev, avatarUrl: previousAvatar }));
+
+      if (user) {
+        setUser({
+          ...user,
+          avatar: previousAvatar || undefined,
+        });
+      }
+
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la mise à jour de la photo');
+    } finally {
+      setIsSavingAvatar(false);
+    }
+  };
+
   const handlePasswordChange = async () => {
     if (!securityData.currentPassword || !securityData.newPassword || !securityData.confirmPassword) {
       toast.error('Tous les champs mot de passe sont obligatoires');
@@ -143,8 +195,8 @@ export const AdminProfile: React.FC = () => {
       name={joinFullName(profileData.firstName, profileData.lastName) || 'Administrateur'}
       email={profileData.email || user?.email || ''}
       avatar={profileData.avatarUrl || user?.avatar || null}
-      onAvatarChange={(value) => setProfileData((prev) => ({ ...prev, avatarUrl: value }))}
-      avatarDisabled={isSavingProfile}
+      onAvatarChange={handleAvatarChange}
+      avatarDisabled={isSavingProfile || isSavingAvatar}
       onLogout={handleLogout}
       heroStats={[
         { label: 'Accès', value: 'Administration' },
@@ -172,7 +224,7 @@ export const AdminProfile: React.FC = () => {
               <Button
                 variant="outline"
                 className="flex-1 rounded-2xl"
-                disabled={isSavingProfile}
+                disabled={isSavingProfile || isSavingAvatar}
                 onClick={() =>
                   setProfileData({
                     firstName: user?.prenom || '',
@@ -184,7 +236,7 @@ export const AdminProfile: React.FC = () => {
               >
                 Annuler
               </Button>
-              <Button className="flex-1 rounded-2xl" onClick={handleSaveChanges} disabled={isSavingProfile}>
+              <Button className="flex-1 rounded-2xl" onClick={handleSaveChanges} disabled={isSavingProfile || isSavingAvatar}>
                 {isSavingProfile ? 'Enregistrement...' : 'Enregistrer les modifications'}
               </Button>
             </div>

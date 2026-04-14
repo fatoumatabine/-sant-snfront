@@ -60,6 +60,7 @@ export const MedecinProfile = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -138,6 +139,62 @@ export const MedecinProfile = () => {
     }
   };
 
+  const handleAvatarChange = async (avatarUrl: string | null) => {
+    if (!profile) {
+      return;
+    }
+
+    const previousAvatar = formData.avatarUrl || user?.avatar || null;
+
+    setFormData((current) => ({ ...current, avatarUrl }));
+
+    if (user) {
+      setUser({
+        ...user,
+        avatar: avatarUrl || undefined,
+      });
+    }
+
+    try {
+      setIsSavingAvatar(true);
+      setError(null);
+
+      const response = await apiService.put(`/medecins/${profile.id}`, {
+        avatarUrl,
+      });
+
+      const updatedProfile = unwrapData<Partial<MedecinProfilePayload>>(response);
+      const storedAvatar = updatedProfile.user?.avatarUrl || null;
+
+      setProfile((current) => (current ? { ...current, ...updatedProfile } : current));
+      setFormData((current) => ({ ...current, avatarUrl: storedAvatar }));
+
+      if (user) {
+        setUser({
+          ...user,
+          avatar: storedAvatar || undefined,
+        });
+      }
+
+      toast.success(storedAvatar ? 'Photo de profil mise à jour' : 'Photo de profil supprimée');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Impossible de mettre à jour la photo';
+      setError(message);
+      setFormData((current) => ({ ...current, avatarUrl: previousAvatar }));
+
+      if (user) {
+        setUser({
+          ...user,
+          avatar: previousAvatar || undefined,
+        });
+      }
+
+      toast.error(message);
+    } finally {
+      setIsSavingAvatar(false);
+    }
+  };
+
   const handleChangePassword = async () => {
     if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
       toast.error('Tous les champs mot de passe sont obligatoires');
@@ -195,8 +252,8 @@ export const MedecinProfile = () => {
       name={`${formData.prenom} ${formData.nom}`.trim() || `${user?.prenom || ''} ${user?.nom || ''}`.trim()}
       email={formData.email || user?.email || ''}
       avatar={formData.avatarUrl || user?.avatar || null}
-      onAvatarChange={(value) => setFormData((current) => ({ ...current, avatarUrl: value }))}
-      avatarDisabled={isSaving}
+      onAvatarChange={handleAvatarChange}
+      avatarDisabled={isSaving || isSavingAvatar}
       heroStats={[
         { label: 'Spécialité', value: formData.specialite || 'À renseigner' },
         {
@@ -226,7 +283,7 @@ export const MedecinProfile = () => {
               <Button
                 variant="outline"
                 className="flex-1 rounded-2xl"
-                disabled={isSaving || !profile}
+                disabled={isSaving || isSavingAvatar || !profile}
                 onClick={() => {
                   if (!profile) return;
                   setFormData({
@@ -248,7 +305,7 @@ export const MedecinProfile = () => {
               </Button>
               <Button
                 onClick={handleSave}
-                disabled={isSaving || !profile}
+                disabled={isSaving || isSavingAvatar || !profile}
                 className="flex-1 rounded-2xl"
               >
                 {isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}

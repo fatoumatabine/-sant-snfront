@@ -1,11 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell,
+  ChevronDown,
   LogOut,
   Menu,
   Moon,
   Sun,
+  User,
   X,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
@@ -63,14 +65,10 @@ const getDashboardPageLabel = (pathname: string) => {
   return DASHBOARD_ROUTE_LABELS[candidate] || prettifySegment(candidate);
 };
 
-const getSettingsPathForRole = (role: string) => {
-  if (role === 'admin') return '/admin/parametres';
-  if (role === 'secretaire') return '/secretaire/parametres';
-  return null;
-};
-
 export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const { user, isAuthenticated, logout } = useAuthStore();
   const {
     unreadCount,
@@ -85,20 +83,15 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
 
   const isPublicPage = ['/', '/auth/login', '/auth/register', '/auth/forgot-password'].includes(location.pathname);
   const currentSectionLabel = useMemo(() => getDashboardPageLabel(location.pathname), [location.pathname]);
-  const dashboardDateLabel = useMemo(
-    () =>
-      new Intl.DateTimeFormat('fr-FR', {
-        weekday: 'short',
-        day: '2-digit',
-        month: 'short',
-      }).format(new Date()),
-    [location.pathname]
-  );
+  const dashboardDateLabel = new Intl.DateTimeFormat('fr-FR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+  }).format(new Date());
 
   useEffect(() => {
     setMobileMenuOpen(false);
     setProfileMenuOpen(false);
-    setNotificationsOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -143,11 +136,28 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
   }, [isAuthenticated, notificationsEnabled, fetchNotifications, fetchUnreadCount, resetNotifications]);
 
   useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMobileMenuOpen(false);
+    const handleDocumentClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+
+      if (profileMenuRef.current && !profileMenuRef.current.contains(target)) {
+        setProfileMenuOpen(false);
+      }
     };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMobileMenuOpen(false);
+        setProfileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleDocumentClick);
     document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleDocumentClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -184,7 +194,7 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
           <div className="relative flex h-16 items-center justify-between gap-3 md:h-20">
             <div className="flex min-w-0 items-center gap-3 md:gap-4">
               <Avatar className="h-11 w-11 rounded-[18px] border border-white/70 shadow-md">
-                <AvatarImage src={getAvatarSrc(user.avatar)} alt={`${user.prenom} ${user.nom}`} />
+                <AvatarImage src={getAvatarSrc(user.avatar)} alt={`${user.prenom} ${user.nom}`} className="object-cover" />
                 <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-sm font-semibold text-white">
                   {getUserInitials(user.prenom, user.nom, user.email)}
                 </AvatarFallback>
@@ -200,7 +210,6 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
             <div className="flex items-center gap-1 md:gap-2">
               <button
                 onClick={() => {
-                  setNotificationsOpen(false);
                   setProfileMenuOpen(false);
                   toggleDarkMode();
                 }}
@@ -210,20 +219,11 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
                 {isDarkMode ? <Sun className="h-4 w-4 text-warning" /> : <Moon className="h-4 w-4" />}
               </button>
 
-              {/* Bouton déconnexion direct */}
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="rounded-2xl border border-white/60 bg-background/75 p-2.5 text-muted-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
-                title="Déconnexion"
-              >
-                <LogOut className="h-4 w-4" />
-              </button>
-
               {/* Notifications — lien direct vers la page */}
               {notificationsEnabled && (
                 <Link
                   to={`/${user.role}/notifications`}
+                  onClick={() => setProfileMenuOpen(false)}
                   className="relative rounded-2xl border border-white/60 bg-background/75 p-2.5 text-muted-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-background hover:text-foreground"
                   title="Notifications"
                 >
@@ -236,25 +236,54 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
                 </Link>
               )}
 
-              {/* Profil — lien direct */}
-              <Link
-                to={`/${user.role}/profile`}
-                className="flex items-center gap-2 rounded-[22px] border border-white/60 bg-background/75 px-3 py-2 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-background"
-                title="Mon profil"
-              >
-                <Avatar className="h-9 w-9 rounded-xl border border-border/60">
-                  <AvatarImage src={getAvatarSrc(user.avatar)} alt={`${user.prenom} ${user.nom}`} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
-                    {getUserInitials(user.prenom, user.nom, user.email)}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="hidden lg:block text-left">
-                  <span className="block max-w-[160px] truncate text-sm font-semibold">
-                    {user.prenom} {user.nom}
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setProfileMenuOpen((prev) => !prev)}
+                  aria-haspopup="menu"
+                  aria-expanded={profileMenuOpen}
+                  className="flex items-center gap-2 rounded-[22px] border border-white/60 bg-background/75 px-3 py-2 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-background"
+                  title="Ouvrir le menu du profil"
+                >
+                  <Avatar className="h-9 w-9 rounded-xl border border-border/60">
+                    <AvatarImage src={getAvatarSrc(user.avatar)} alt={`${user.prenom} ${user.nom}`} className="object-cover" />
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                      {getUserInitials(user.prenom, user.nom, user.email)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden lg:block text-left">
+                    <span className="block max-w-[160px] truncate text-sm font-semibold">
+                      {user.prenom} {user.nom}
+                    </span>
+                    <span className="block text-xs text-muted-foreground capitalize">{user.role}</span>
                   </span>
-                  <span className="block text-xs text-muted-foreground capitalize">{user.role}</span>
-                </span>
-              </Link>
+                  <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', profileMenuOpen && 'rotate-180')} />
+                </button>
+
+                {profileMenuOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 mt-3 min-w-[220px] overflow-hidden rounded-[24px] border border-white/70 bg-card/95 p-2 shadow-[0_28px_70px_-36px_rgba(15,23,42,0.5)] backdrop-blur-xl"
+                  >
+                    <Link
+                      to={`/${user.role}/profile`}
+                      onClick={() => setProfileMenuOpen(false)}
+                      className="flex items-center gap-3 rounded-[18px] px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
+                    >
+                      <User className="h-4 w-4 text-primary" />
+                      Mon profil
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="mt-1 flex w-full items-center gap-3 rounded-[18px] px-3 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Déconnexion
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
