@@ -1,7 +1,5 @@
 import React from 'react';
 
-import { TopBar } from '@/components/Home/TopBar';
-import { HomeNavbar } from '@/components/Home/HomeNavbar';
 import { HeroSection } from '@/components/Home/HeroSection';
 import { FeaturesSection } from '@/components/Home/FeaturesSection';
 import { HowItWorksSection } from '@/components/Home/HowItWorksSection';
@@ -11,18 +9,10 @@ import { StatsSection } from '@/components/Home/StatsSection';
 import { DoctorsSection } from '@/components/Home/DoctorsSection';
 import { AppointmentSection } from '@/components/Home/AppointmentSection';
 import { TestimonialsSection } from '@/components/Home/TestimonialsSection';
-import { HomeFooter } from '@/components/Home/HomeFooter';
 
 const HomePage: React.FC = () => {
   return (
     <div className="min-h-screen">
-      {/* Top info bar (scrolls away) */}
-      <TopBar />
-
-      {/* Sticky navigation */}
-      <HomeNavbar />
-
-      {/* Page sections */}
       <main>
         <HeroSection />
         <FeaturesSection />
@@ -34,8 +24,6 @@ const HomePage: React.FC = () => {
         <AppointmentSection />
         <TestimonialsSection />
       </main>
-
-      <HomeFooter />
     </div>
   );
 };

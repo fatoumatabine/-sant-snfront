@@ -11,10 +11,11 @@ import {
   Facebook,
   ArrowRight,
 } from 'lucide-react';
+import { marketingNavLinks } from './marketingNavigation';
 
 export const HomeFooter: React.FC = () => {
   return (
-    <footer id="contact" className="bg-[#002F3A] text-white">
+    <footer className="bg-[#002F3A] text-white">
       {/* Main footer */}
       <div className="container mx-auto px-4 py-16">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
@@ -63,7 +64,7 @@ export const HomeFooter: React.FC = () => {
               ].map((item) => (
                 <li key={item}>
                   <Link
-                    to="#services"
+                    to="/services"
                     className="flex items-center gap-2 text-teal-200 text-sm hover:text-[#3BC1A8] transition-colors group"
                   >
                     <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
@@ -78,13 +79,7 @@ export const HomeFooter: React.FC = () => {
           <div>
             <h4 className="font-bold text-white mb-5 text-base">Liens Rapides</h4>
             <ul className="space-y-3">
-              {[
-                { label: 'À Propos', to: '#about' },
-                { label: 'Notre Équipe', to: '#medecins' },
-                { label: 'Se Connecter', to: '/auth/login' },
-                { label: "S'inscrire", to: '/auth/register' },
-                { label: 'Contact', to: '#contact' },
-              ].map(({ label, to }) => (
+              {[...marketingNavLinks.slice(2), { label: 'Se Connecter', to: '/auth/login' }, { label: "S'inscrire", to: '/auth/register' }].map(({ label, to }) => (
                 <li key={label}>
                   <Link
                     to={to}

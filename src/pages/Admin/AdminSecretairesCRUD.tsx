@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Users, Plus, Search, Edit2, Trash2, X, Eye, Phone, Stethoscope, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiService } from '@/services/api';
 import { toast } from 'sonner';

@@ -3,31 +3,28 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fadeUp, staggerContainer, staggerItem, viewport } from '@/lib/animations';
+import { marketingImages } from '@/lib/marketingImages';
 
 const doctors = [
   {
     name: 'Dr. Aminata Diallo',
     role: 'Médecin Généraliste',
-    image:
-      'https://images.pexels.com/photos/5452291/pexels-photo-5452291.jpeg?auto=compress&cs=tinysrgb&w=600',
+    image: marketingImages.homeDoctorGeneral,
   },
   {
     name: 'Dr. Moussa Koné',
     role: 'Cardiologue',
-    image:
-      'https://images.pexels.com/photos/4031820/pexels-photo-4031820.jpeg?auto=compress&cs=tinysrgb&w=600',
+    image: marketingImages.homeDoctorCardio,
   },
   {
     name: 'Dr. Fatou Sow',
     role: 'Pédiatre',
-    image:
-      'https://images.pexels.com/photos/8376212/pexels-photo-8376212.jpeg?auto=compress&cs=tinysrgb&w=600',
+    image: marketingImages.homeDoctorPediatrics,
   },
   {
     name: 'Dr. Omar Ba',
     role: 'Chirurgien',
-    image:
-      'https://images.pexels.com/photos/19957213/pexels-photo-19957213.jpeg?auto=compress&cs=tinysrgb&w=600',
+    image: marketingImages.homeDoctorSurgery,
   },
 ];
 
@@ -74,7 +71,7 @@ export const DoctorsSection: React.FC = () => {
               <div className="relative h-64 overflow-hidden bg-gray-100">
                 <motion.img
                   src={doctor.image}
-                  alt={doctor.name}
+                  alt="Illustration consultation Santé SN"
                   className="w-full h-full object-cover object-top"
                   whileHover={{ scale: 1.08 }}
                   transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -92,7 +89,7 @@ export const DoctorsSection: React.FC = () => {
                     className="opacity-0 group-hover:opacity-100"
                   >
                     <Link
-                      to="/auth/register"
+                      to="/medecins"
                       className="bg-[#3BC1A8] text-white text-sm font-semibold px-5 py-2.5 rounded-full block"
                     >
                       Consulter
@@ -121,7 +118,7 @@ export const DoctorsSection: React.FC = () => {
         >
           <motion.div whileHover={{ scale: 1.04 }} transition={{ type: 'spring', stiffness: 300, damping: 18 }}>
             <Link
-              to="/auth/register"
+              to="/medecins"
               className="inline-flex items-center gap-2 text-[#005461] font-semibold text-sm border-2 border-[#005461] px-8 py-3.5 rounded-full hover:bg-[#005461] hover:text-white transition-all duration-300"
             >
               Voir tous nos médecins

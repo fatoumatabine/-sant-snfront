@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Plus, Search, Edit2, Download, Trash2, X, Filter, RotateCcw, Eye } from 'lucide-react';
+import { Plus, Search, Edit2, Download, Trash2, X, Filter, RotateCcw, Eye, Loader2 } from 'lucide-react';
 import { OrdonnanceDocument } from '@/components/Common/OrdonnanceDocument';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiService } from '@/services/api';
@@ -77,6 +77,7 @@ export const MedecinOrdonnances: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [medicaments, setMedicaments] = useState<MedicamentInput[]>([defaultMedicament]);
   const [formData, setFormData] = useState({
     consultation_id: '',
@@ -194,12 +195,15 @@ export const MedecinOrdonnances: React.FC = () => {
   });
 
   const handleDownloadOrdonnance = async (ordonnanceId: string) => {
+    setDownloadingId(ordonnanceId);
     try {
       const blob = await apiService.getBlob(`/ordonnances/${ordonnanceId}/download`);
       downloadBlobFile(blob, `ordonnance-${ordonnanceId}.pdf`);
       toast.success('Ordonnance téléchargée');
     } catch (error: any) {
       toast.error(error.message || 'Téléchargement impossible');
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -410,11 +414,16 @@ export const MedecinOrdonnances: React.FC = () => {
                         <Eye className="h-4 w-4" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleDownloadOrdonnance(ordonnance.id)}
-                        className="p-1 hover:bg-muted rounded"
-                        title="Télécharger PDF serveur"
+                        className="p-1 hover:bg-muted rounded disabled:opacity-50"
+                        title="Télécharger PDF"
+                        disabled={downloadingId === ordonnance.id}
                       >
-                        <Download className="h-4 w-4" />
+                        {downloadingId === ordonnance.id
+                          ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : <Download className="h-4 w-4" />
+                        }
                       </button>
                       <button
                         onClick={() => handleOpenEdit(ordonnance)}
@@ -457,7 +466,7 @@ export const MedecinOrdonnances: React.FC = () => {
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-96 overflow-y-auto">
+          <div className="bg-white rounded-lg w-full max-w-5xl">
             <div className="sticky top-0 bg-white border-b p-6 flex items-center justify-between">
               <h2 className="text-xl font-bold">{editingId ? 'Modifier l\'ordonnance' : 'Nouvelle ordonnance'}</h2>
               <button onClick={resetForm} className="p-1 hover:bg-muted rounded">
@@ -465,7 +474,7 @@ export const MedecinOrdonnances: React.FC = () => {
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-6">
               <div>
                 <label className="block text-sm font-medium mb-2">Consultation</label>
                 <select
@@ -494,10 +503,10 @@ export const MedecinOrdonnances: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium mb-2">Médicaments (optionnel)</label>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
+                <div className="space-y-3">
                   {medicaments.map((med, idx) => (
                     <div key={idx} className="border border-input rounded-lg p-3 space-y-2">
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                         <input
                           placeholder="Nom du médicament"
                           value={med.nom}
@@ -510,8 +519,6 @@ export const MedecinOrdonnances: React.FC = () => {
                           onChange={(e) => handleMedicamentChange(idx, 'dosage', e.target.value)}
                           className="border border-input rounded p-2 text-sm bg-background"
                         />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
                         <input
                           placeholder="Fréquence"
                           value={med.frequence}

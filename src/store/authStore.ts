@@ -7,6 +7,7 @@ import {
   AUTH_VALIDATION_MESSAGES,
   isValidGmailEmail,
 } from '@/constants/authValidation';
+import { splitFullName } from '@/lib/user-name';
 
 interface RegisterPatientPayload {
   prenom: string;
@@ -38,6 +39,25 @@ interface AuthState {
   setHasHydrated: (value: boolean) => void;
 }
 
+const mapAuthUserToStoreUser = (userData: any): User => {
+  const parsedName = splitFullName(userData.name);
+
+  return {
+    id: String(userData.id),
+    email: userData.email,
+    nom: userData.nom || parsedName.lastName || '',
+    prenom: userData.prenom || parsedName.firstName || '',
+    role: userData.role as UserRole,
+    telephone: userData.phone || userData.telephone || '',
+    patientId: userData.patientId,
+    medecinId: userData.medecinId,
+    secretaireId: userData.secretaireId,
+    avatar: userData.avatarUrl || userData.avatar || undefined,
+    dateInscription: new Date().toISOString().split('T')[0],
+    actif: true,
+  };
+};
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -63,19 +83,7 @@ export const useAuthStore = create<AuthState>()(
           const userData = responseData.user;
 
           if (token && userData) {
-            const user: User = {
-              id: String(userData.id),
-              email: userData.email,
-              nom: userData.name?.split(' ')[1] || userData.nom || '',
-              prenom: userData.name?.split(' ')[0] || userData.prenom || '',
-              role: userData.role as UserRole,
-              telephone: userData.phone || userData.telephone || '',
-              patientId: userData.patientId,
-              medecinId: userData.medecinId,
-              secretaireId: userData.secretaireId,
-              dateInscription: new Date().toISOString().split('T')[0],
-              actif: true
-            };
+            const user = mapAuthUserToStoreUser(userData);
 
             // Mettre à jour le token dans le service API
             apiService.setToken(token);
@@ -170,19 +178,7 @@ export const useAuthStore = create<AuthState>()(
           const user = responseData.user;
 
           if (token && user) {
-            const newUser: User = {
-              id: String(user.id),
-              email: user.email,
-              nom: user.name?.split(' ')[1] || user.nom || '',
-              prenom: user.name?.split(' ')[0] || user.prenom || '',
-              role: user.role as UserRole,
-              telephone: user.phone || user.telephone || '',
-              patientId: user.patientId,
-              medecinId: user.medecinId,
-              secretaireId: user.secretaireId,
-              dateInscription: new Date().toISOString().split('T')[0],
-              actif: true
-            };
+            const newUser = mapAuthUserToStoreUser(user);
 
             // Mettre à jour le token dans le service API
             apiService.setToken(token);

@@ -104,7 +104,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ allowedRoles }
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.10),transparent_24%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.08),transparent_18%),linear-gradient(180deg,hsl(var(--background)),hsl(var(--background)))]">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.28),transparent_24%)]" />
       <Navbar sidebarExpanded={isSidebarExpanded} />
       <Sidebar
         isOpen={sidebarOpen}
@@ -115,23 +116,25 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ allowedRoles }
       
       <div
         className={cn(
-          'min-h-screen pt-[86px] transition-[margin-left] duration-300 md:pt-[100px]',
+          'relative min-h-screen pt-[86px] transition-[margin-left] duration-300 md:pt-[100px]',
           isSidebarExpanded ? 'lg:ml-72' : 'lg:ml-[86px]'
         )}
       >
         {/* Mobile Header with Menu Toggle */}
-        <div className="lg:hidden sticky top-[86px] md:top-[100px] z-30 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Menu className="h-5 w-5" />
-            <span>Menu</span>
-          </button>
+        <div className="lg:hidden sticky top-[86px] md:top-[100px] z-30 px-4 py-3">
+          <div className="rounded-2xl border border-white/60 bg-card/85 px-4 py-3 shadow-sm backdrop-blur-xl">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Menu className="h-5 w-5" />
+              <span>Ouvrir le menu</span>
+            </button>
+          </div>
         </div>
 
         {/* Page Content */}
-        <main className="p-4 md:p-6 lg:p-8">
+        <main className="mx-auto max-w-[1600px] p-4 md:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>

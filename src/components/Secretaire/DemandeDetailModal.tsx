@@ -8,7 +8,7 @@ interface Demande {
   date: string;
   heure: string;
   type: 'en_ligne' | 'presentiel' | 'prestation';
-  statut: 'en_attente' | 'confirme' | 'annule' | 'termine';
+  statut: 'en_attente' | 'confirme' | 'annule' | 'termine' | 'paye';
   patient?: {
     id: number;
     prenom: string;
@@ -27,6 +27,7 @@ interface Demande {
   };
   prestation_type?: string;
   created_at?: string;
+  createdAt?: string;
 }
 
 interface DemandeDetailModalProps {
@@ -38,10 +39,13 @@ interface DemandeDetailModalProps {
     available: boolean;
     reason: string | null;
     creneaux: string[];
+    creneauxDisponibles?: string[];
     heureDemandeeDisponible: boolean;
     conflictCount: number;
+    creneauReference?: string | null;
   } | null;
   isCheckingDisponibilite?: boolean;
+  isSubmittingAction?: boolean;
 }
 
 export const DemandeDetailModal: React.FC<DemandeDetailModalProps> = ({
@@ -51,6 +55,7 @@ export const DemandeDetailModal: React.FC<DemandeDetailModalProps> = ({
   onClose,
   disponibilite,
   isCheckingDisponibilite = false,
+  isSubmittingAction = false,
 }) => {
   const REJECT_REASON_MAX_LENGTH = 300;
   const [rejectReason, setRejectReason] = React.useState('');
@@ -107,7 +112,9 @@ export const DemandeDetailModal: React.FC<DemandeDetailModalProps> = ({
               <div>
                 <p className="text-sm text-muted-foreground">Date de demande</p>
                 <p className="font-medium">
-                  {demande.created_at ? new Date(demande.created_at).toLocaleDateString('fr-FR') : 'N/A'}
+                  {demande.createdAt || demande.created_at
+                    ? new Date(demande.createdAt || demande.created_at || '').toLocaleDateString('fr-FR')
+                    : 'N/A'}
                 </p>
               </div>
 
@@ -230,6 +237,7 @@ export const DemandeDetailModal: React.FC<DemandeDetailModalProps> = ({
               <p className="font-medium text-blue-900">
                 {demande.statut === 'en_attente' && 'En attente de traitement'}
                 {demande.statut === 'confirme' && 'Accepté'}
+                {demande.statut === 'paye' && 'Payé'}
                 {demande.statut === 'annule' && 'Refusé'}
                 {demande.statut === 'termine' && 'Terminé'}
               </p>
@@ -260,9 +268,19 @@ export const DemandeDetailModal: React.FC<DemandeDetailModalProps> = ({
                     {disponibilite?.reason && (
                       <p className="text-xs text-red-700">{disponibilite.reason}</p>
                     )}
+                    {disponibilite?.creneauReference ? (
+                      <p className="text-xs text-red-700">
+                        Créneau de référence: {disponibilite.creneauReference}
+                      </p>
+                    ) : null}
                     {disponibilite?.creneaux?.length ? (
                       <p className="text-xs text-red-700">
                         Créneaux actifs: {disponibilite.creneaux.join(', ')}
+                      </p>
+                    ) : null}
+                    {disponibilite?.creneauxDisponibles?.length ? (
+                      <p className="text-xs text-red-700">
+                        Créneaux encore libres: {disponibilite.creneauxDisponibles.join(', ')}
                       </p>
                     ) : null}
                   </div>
@@ -300,34 +318,35 @@ export const DemandeDetailModal: React.FC<DemandeDetailModalProps> = ({
             </div>
 
             <div className="flex gap-3">
-            <Button
-              onClick={onApprove}
-              variant="default"
-              className="gap-2 flex-1 bg-green-600 hover:bg-green-700"
-              disabled={isCheckingDisponibilite || disponibilite?.available === false}
-            >
-              <CheckCircle className="h-5 w-5" />
-              Valider le traitement
-            </Button>
-            <Button
-              onClick={() => {
-                const reason = rejectReason.trim();
-                if (!reason) {
-                  setRejectError('Le motif du refus est obligatoire.');
-                  return;
-                }
-                if (reason.length > REJECT_REASON_MAX_LENGTH) {
-                  setRejectError(`Le motif ne doit pas dépasser ${REJECT_REASON_MAX_LENGTH} caractères.`);
-                  return;
-                }
-                onReject(reason);
-              }}
-              variant="destructive"
-              className="gap-2 flex-1"
-            >
-              <XCircle className="h-5 w-5" />
-              Refuser
-            </Button>
+              <Button
+                onClick={onApprove}
+                variant="default"
+                className="gap-2 flex-1 bg-green-600 hover:bg-green-700"
+                disabled={isSubmittingAction || isCheckingDisponibilite || disponibilite?.available === false}
+              >
+                <CheckCircle className="h-5 w-5" />
+                {isSubmittingAction ? 'Validation...' : 'Valider le traitement'}
+              </Button>
+              <Button
+                onClick={() => {
+                  const reason = rejectReason.trim();
+                  if (!reason) {
+                    setRejectError('Le motif du refus est obligatoire.');
+                    return;
+                  }
+                  if (reason.length > REJECT_REASON_MAX_LENGTH) {
+                    setRejectError(`Le motif ne doit pas dépasser ${REJECT_REASON_MAX_LENGTH} caractères.`);
+                    return;
+                  }
+                  onReject(reason);
+                }}
+                variant="destructive"
+                className="gap-2 flex-1"
+                disabled={isSubmittingAction}
+              >
+                <XCircle className="h-5 w-5" />
+                {isSubmittingAction ? 'Traitement...' : 'Refuser'}
+              </Button>
             </div>
           </div>
         )}
