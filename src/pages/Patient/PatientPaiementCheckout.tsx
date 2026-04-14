@@ -453,7 +453,7 @@ export const PatientPaiementCheckout: React.FC = () => {
 
   const simulateMutation = useMutation({
     mutationFn: async () =>
-      apiService.post('/paiements/simuler', { rendezVousId: numericRendezVousId }),
+      apiService.post('/paiements/payer', { rendezVousId: numericRendezVousId }),
     onSuccess: () => {
       toast.success('Paiement simulé avec succès');
       void refetchPaiements();
