@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Calendar, Search, Filter, RotateCcw } from 'lucide-react';
+import { Calendar, Search, Filter, RotateCcw, FileEdit } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '@/services/api';
 import { API_ENDPOINTS } from '@/config/api-endpoints';
@@ -266,6 +266,17 @@ export const MedecinRendezVous: React.FC = () => {
                   {rdv.statut === 'paye' && (
                     <Button size="sm" onClick={() => handleStartConsultation(rdv.id)}>
                       Prendre en consultation
+                    </Button>
+                  )}
+                  {rdv.consultation?.id && rdv.consultation.statut === 'termine' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1"
+                      onClick={() => navigate(`/medecin/ordonnances?consultationId=${rdv.consultation!.id}`)}
+                    >
+                      <FileEdit className="h-3.5 w-3.5" />
+                      Prescrire une ordonnance
                     </Button>
                   )}
                   {rdv.type === 'en_ligne' && rdv.consultation?.id && rdv.consultation.statut === 'en_cours' && (
