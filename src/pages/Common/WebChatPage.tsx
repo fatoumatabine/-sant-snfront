@@ -503,7 +503,7 @@ export const WebChatPage = () => {
 
   return (
     <div className="space-y-5 animate-fade-in">
-      <div className="card-health border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent">
+      <div className="card-health border border-primary/20 bg-primary/10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">

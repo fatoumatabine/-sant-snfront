@@ -188,14 +188,14 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
       >
         <div className="relative rounded-[30px] border border-white/60 bg-card/85 px-4 shadow-[0_26px_60px_-34px_rgba(15,23,42,0.45)] backdrop-blur-xl md:px-5">
           <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[30px]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.16),transparent_24%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.12),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.82),rgba(255,255,255,0.72))]" />
+            <div className="absolute inset-0 bg-white/82" />
             <div className="absolute -right-12 top-0 h-36 w-36 rounded-full bg-primary/10 blur-3xl" />
           </div>
           <div className="relative flex h-16 items-center justify-between gap-3 md:h-20">
             <div className="flex min-w-0 items-center gap-3 md:gap-4">
               <Avatar className="h-11 w-11 rounded-[18px] border border-white/70 shadow-md">
                 <AvatarImage src={getAvatarSrc(user.avatar)} alt={`${user.prenom} ${user.nom}`} className="object-cover" />
-                <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-sm font-semibold text-white">
+                <AvatarFallback className="bg-primary text-sm font-semibold text-white">
                   {getUserInitials(user.prenom, user.nom, user.email)}
                 </AvatarFallback>
               </Avatar>
@@ -295,10 +295,8 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarExpanded = false }) => {
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-white font-bold">
-              S
-            </div>
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/Sante sn.png" alt="Santé SN" className="h-10 w-10 rounded-xl object-contain" />
             <span className="font-display text-lg font-bold">
               Sante <span className="text-primary">SN</span>
             </span>

@@ -171,21 +171,7 @@ const InvoiceHeader: React.FC<{ invoiceRef: string; invoiceDate: string }> = ({
     <div className="relative z-10 flex items-center justify-between px-8 py-6">
       {/* Brand */}
       <div className="flex items-center gap-3">
-        <div
-          className="flex items-center justify-center rounded-xl"
-          style={{
-            width: 52,
-            height: 52,
-            background: 'rgba(255,255,255,0.18)',
-            backdropFilter: 'blur(8px)',
-            border: '1.5px solid rgba(255,255,255,0.3)',
-          }}
-        >
-          <svg width="26" height="26" viewBox="0 0 22 22" fill="none" aria-hidden>
-            <rect x="8" y="2" width="6" height="18" rx="2" fill="white" />
-            <rect x="2" y="8" width="18" height="6" rx="2" fill="white" />
-          </svg>
-        </div>
+        <img src="/Sante sn.png" alt="Santé SN" style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'contain' }} />
         <div>
           <p
             className="font-bold text-white tracking-widest text-lg leading-tight"

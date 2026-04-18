@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { RendezVous, DemandeRdv } from '@/types';
 import { apiService } from '@/services/api';
+import { getPatientTriage, isPatientTriageValid } from '@/lib/patientTriage';
+import { useAuthStore } from '@/store/authStore';
 
 interface RendezVousState {
   rendezVous: RendezVous[];
@@ -43,12 +45,20 @@ export const useRendezVousStore = create<RendezVousState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
+      const authUserId = useAuthStore.getState().user?.id;
+      const triage = getPatientTriage(authUserId);
+
+      if (!isPatientTriageValid(triage, authUserId)) {
+        throw new Error("Une pré-évaluation IA valide est requise avant de créer un rendez-vous");
+      }
+
       const payload = {
         medecin_id: rdv.medecinId,
         date: rdv.date,
         heure: rdv.heure,
         motif: rdv.motif,
-        type: rdv.typeConsultation === 'video' ? 'en_ligne' : 'presentiel'
+        type: rdv.typeConsultation === 'video' ? 'en_ligne' : 'presentiel',
+        triage_evaluation_id: triage.evaluationId,
       };
 
       const response = await apiService.post('/rendez-vous', payload);
@@ -101,12 +111,20 @@ export const useRendezVousStore = create<RendezVousState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
+      const authUserId = useAuthStore.getState().user?.id;
+      const triage = getPatientTriage(authUserId);
+
+      if (!isPatientTriageValid(triage, authUserId)) {
+        throw new Error("Une pré-évaluation IA valide est requise avant de créer un rendez-vous");
+      }
+
       const payload = {
         medecin_id: Number(demande.medecinId),
         date: demande.datePreferee,
         heure: demande.heurePreferee,
         motif: demande.motif,
         type: 'presentiel',
+        triage_evaluation_id: triage.evaluationId,
       };
 
       const response = await apiService.post('/rendez-vous', payload);

@@ -108,7 +108,7 @@ export const ForgotPasswordPage: React.FC = () => {
         <div className="card-health">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Mail className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold font-display">Mot de passe oublié ?</h1>

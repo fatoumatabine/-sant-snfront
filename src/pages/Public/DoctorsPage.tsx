@@ -183,7 +183,7 @@ const DoctorsPage: React.FC = () => {
                   variants={staggerItem}
                   className="overflow-hidden rounded-[2rem] bg-[#f7fbfa] shadow-[0_24px_70px_-38px_rgba(0,84,97,0.35)]"
                 >
-                  <div className="relative overflow-hidden bg-gradient-to-br from-[#005461] via-[#0C7779] to-[#3BC1A8] px-6 pb-8 pt-6 text-white">
+                  <div className="relative overflow-hidden bg-[#0C7779] px-6 pb-8 pt-6 text-white">
                     <div className="absolute right-[-34px] top-[-34px] h-24 w-24 rounded-full bg-white/10" />
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 text-lg font-bold backdrop-blur-sm">

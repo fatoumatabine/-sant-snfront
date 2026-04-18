@@ -447,7 +447,7 @@ export const SecretaireAgenda: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="bg-gradient-primary rounded-2xl p-6 md:p-8 text-white">
+      <div className="bg-primary rounded-2xl p-6 md:p-8 text-white">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold font-display mb-2">
@@ -706,7 +706,7 @@ export const SecretaireAgenda: React.FC = () => {
 
         <div className="space-y-4">
           {upcomingEvents.length > 0 && (
-            <Card className="bg-gradient-primary text-white shadow-lg rounded-2xl border-0 p-6 relative overflow-hidden">
+            <Card className="bg-primary text-white shadow-lg rounded-2xl border-0 p-6 relative overflow-hidden">
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
                   <h3 className="font-semibold text-lg">Prochain rendez-vous</h3>

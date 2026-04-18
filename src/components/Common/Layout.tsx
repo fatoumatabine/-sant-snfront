@@ -6,7 +6,6 @@ import { Sidebar } from './Sidebar';
 import { useAuthStore } from '@/store/authStore';
 import { UserRole } from '@/types';
 import { readAdminSettings } from '@/lib/adminSettings';
-import { cn } from '@/lib/utils';
 
 interface DashboardLayoutProps {
   allowedRoles: UserRole[];
@@ -14,13 +13,11 @@ interface DashboardLayoutProps {
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ allowedRoles }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarHovered, setSidebarHovered] = useState(false);
-  const [sidebarFocused, setSidebarFocused] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const { user, isAuthenticated, hasHydrated, token, logout } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
   const inactivityTimeoutRef = useRef<number | null>(null);
-  const isSidebarExpanded = sidebarHovered || sidebarFocused;
 
   useEffect(() => {
     if (!hasHydrated) {
@@ -104,22 +101,17 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ allowedRoles }
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.10),transparent_24%),radial-gradient(circle_at_top_right,rgba(251,191,36,0.08),transparent_18%),linear-gradient(180deg,hsl(var(--background)),hsl(var(--background)))]">
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.28),transparent_24%)]" />
-      <Navbar sidebarExpanded={isSidebarExpanded} />
+    <div className="relative min-h-screen overflow-hidden bg-background">
+
+      <Navbar sidebarExpanded={true} />
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        onDesktopHoverChange={setSidebarHovered}
-        onDesktopFocusChange={setSidebarFocused}
+        isCollapsed={true}
+        onHoverChange={setSidebarExpanded}
       />
       
-      <div
-        className={cn(
-          'relative min-h-screen pt-[86px] transition-[margin-left] duration-300 md:pt-[100px]',
-          isSidebarExpanded ? 'lg:ml-72' : 'lg:ml-[86px]'
-        )}
-      >
+      <div className={`relative min-h-screen pt-[86px] md:pt-[100px] transition-all duration-300 ease-in-out ${sidebarExpanded ? 'lg:ml-72' : 'lg:ml-[72px]'}`}>
         {/* Mobile Header with Menu Toggle */}
         <div className="lg:hidden sticky top-[86px] md:top-[100px] z-30 px-4 py-3">
           <div className="rounded-2xl border border-white/60 bg-card/85 px-4 py-3 shadow-sm backdrop-blur-xl">

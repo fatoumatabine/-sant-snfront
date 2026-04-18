@@ -285,7 +285,7 @@ export const AdminMedecinsCRUD: React.FC = () => {
     <div className="space-y-6 animate-fade-in">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="p-6 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 to-background">
+        <div className="p-6 rounded-xl border border-primary/20 bg-primary/10">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-muted-foreground">Total Médecins</p>
@@ -296,7 +296,7 @@ export const AdminMedecinsCRUD: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="p-6 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-background">
+        <div className="p-6 rounded-xl border border-emerald-200 bg-emerald-50">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-muted-foreground">Cardiologues</p>
@@ -307,7 +307,7 @@ export const AdminMedecinsCRUD: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="p-6 rounded-xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-background">
+        <div className="p-6 rounded-xl border border-indigo-200 bg-indigo-50">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-muted-foreground">Dermatologues</p>
@@ -318,7 +318,7 @@ export const AdminMedecinsCRUD: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="p-6 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-background">
+        <div className="p-6 rounded-xl border border-amber-200 bg-amber-50">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-muted-foreground">Généralistes</p>
@@ -652,7 +652,7 @@ export const AdminMedecinsCRUD: React.FC = () => {
       {showModal && modalMode === 'view' && selectedMedecin && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full">
-            <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex items-center justify-between">
+            <div className="bg-green-600 text-white p-6 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold">
                   Dr. {selectedMedecin.prenom} {selectedMedecin.nom}

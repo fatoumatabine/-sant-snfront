@@ -93,7 +93,7 @@ export const PatientConsultations: React.FC = () => {
                 <div className="flex flex-col lg:flex-row lg:items-start gap-4">
                   {/* Header */}
                   <div className="flex items-start gap-4 flex-1">
-                    <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-bold">
                         {medecin?.prenom?.[0]}{medecin?.nom?.[0]}
                       </span>

@@ -149,7 +149,7 @@ export const PatientDashboard: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Welcome Banner */}
-      <div className="bg-gradient-primary rounded-2xl p-6 md:p-8 text-white">
+      <div className="bg-primary rounded-2xl p-6 md:p-8 text-white">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold font-display mb-2">
@@ -241,7 +241,7 @@ export const PatientDashboard: React.FC = () => {
           </div>
 
           {prochainRdv && medecinProchain ? (
-            <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-5 border border-primary/20">
+            <div className="bg-primary/10 rounded-xl p-5 border border-primary/20">
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 bg-primary rounded-full flex items-center justify-center flex-shrink-0 shadow-md">
                   <span className="text-primary-foreground font-bold text-lg">
@@ -318,7 +318,7 @@ export const PatientDashboard: React.FC = () => {
           <div className="space-y-3">
             <Link
               to="/patient/demander-rdv"
-              className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/20 transition-all border border-primary/20"
+              className="flex items-center justify-between p-4 rounded-xl bg-primary/10 transition-all border border-primary/20"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-sm">

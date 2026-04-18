@@ -73,7 +73,7 @@ export const ServicesSection: React.FC = () => {
                   transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                 />
                 {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#005461]/95 via-[#005461]/50 to-transparent" />
+                <div className="absolute inset-0 bg-[#005461]/80" />
               </div>
 
               {/* Icon badge */}

@@ -61,7 +61,7 @@ export const MedecinDashboardResponsive: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-blue-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
         <div className="px-4 md:px-6 lg:px-8 py-4 flex items-center justify-between">
@@ -123,7 +123,7 @@ export const MedecinDashboardResponsive: React.FC = () => {
         {/* Content */}
         <div className="flex-1 px-4 md:px-6 lg:px-8 py-6 space-y-6">
           {/* Welcome banner */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-6 md:p-8 text-white">
+          <div className="bg-blue-700 rounded-xl p-6 md:p-8 text-white">
             <h1 className="text-3xl md:text-4xl font-bold mb-2">
               Bienvenue, Dr. {user?.nom}
             </h1>

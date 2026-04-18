@@ -65,6 +65,16 @@ interface PaiementDetail {
   transactionId: string | null;
   date_paiement: string | null;
   createdAt: string;
+  patient?: {
+    prenom?: string;
+    nom?: string;
+    telephone?: string;
+    date_naissance?: string | null;
+    user?: {
+      name?: string;
+      email?: string;
+    };
+  };
   paymentSession?: {
     provider?: string;
     token?: string;
@@ -227,6 +237,13 @@ const getRdvStatusBadge = (statut: RdvStatus) => {
   }
 };
 
+const getPatientFullName = (patient?: PaiementDetail['patient']) => {
+  if (!patient) return undefined;
+
+  const fallback = `${patient.prenom || ''} ${patient.nom || ''}`.trim();
+  return patient.user?.name || fallback || undefined;
+};
+
 export const PatientPaiementCheckout: React.FC = () => {
   const { rendezVousId } = useParams();
   const location = useLocation();
@@ -350,6 +367,10 @@ export const PatientPaiementCheckout: React.FC = () => {
         transactionId: paiement.transactionId,
         date_paiement: paiement.date_paiement,
         createdAt: paiement.createdAt,
+        patientName: getPatientFullName(paiement.patient),
+        patientEmail: paiement.patient?.user?.email || undefined,
+        patientPhone: paiement.patient?.telephone || undefined,
+        patientDob: paiement.patient?.date_naissance || undefined,
         rendezVous: {
           date: resolvedRendezVous?.date || paiement.rendezVous?.date || paiement.createdAt,
           heure: resolvedRendezVous?.heure || paiement.rendezVous?.heure || '--:--',
@@ -554,7 +575,7 @@ export const PatientPaiementCheckout: React.FC = () => {
 
     try {
       const blob = await apiService.getBlob(`/paiements/${paiement.id}/facture/download`);
-      downloadBlobFile(blob, `facture-${paiement.id}.pdf`);
+      downloadBlobFile(blob, `FAC-${String(paiement.id).padStart(5, '0')}.pdf`);
       toast.success('Facture téléchargée');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Téléchargement impossible');
@@ -589,7 +610,7 @@ export const PatientPaiementCheckout: React.FC = () => {
   if (isLoadingRendezVous || isLoadingPaiements) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div className="bg-gradient-primary rounded-2xl p-6 md:p-8 text-white">
+        <div className="bg-primary rounded-2xl p-6 md:p-8 text-white">
           <Skeleton className="h-8 w-72 bg-white/20" />
           <Skeleton className="mt-3 h-4 w-96 bg-white/15" />
         </div>
@@ -641,7 +662,7 @@ export const PatientPaiementCheckout: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="bg-gradient-primary rounded-2xl p-6 md:p-8 text-white">
+      <div className="bg-primary rounded-2xl p-6 md:p-8 text-white">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">

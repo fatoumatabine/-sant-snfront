@@ -46,7 +46,7 @@ const steps = [
 export const HowItWorksSection: React.FC = () => {
   return (
     <section className="py-24 bg-white relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#005461] via-[#249E94] to-[#3BC1A8]" />
+      <div className="absolute top-0 left-0 w-full h-1 bg-[#0C7779]" />
       <div className="absolute -top-32 -right-32 w-96 h-96 bg-[#e6f7f4] rounded-full opacity-50 pointer-events-none" />
       <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-[#e6f7f4] rounded-full opacity-40 pointer-events-none" />
 
@@ -80,7 +80,7 @@ export const HowItWorksSection: React.FC = () => {
         <div className="relative">
           {/* Connecting line (desktop) */}
           <motion.div
-            className="hidden lg:block absolute top-[72px] left-[calc(12.5%+32px)] right-[calc(12.5%+32px)] h-0.5 bg-gradient-to-r from-[#005461] via-[#249E94] to-[#3BC1A8] z-0"
+            className="hidden lg:block absolute top-[72px] left-[calc(12.5%+32px)] right-[calc(12.5%+32px)] h-0.5 bg-[#0C7779] z-0"
             initial={{ scaleX: 0, originX: 0 }}
             whileInView={{ scaleX: 1 }}
             viewport={viewport}

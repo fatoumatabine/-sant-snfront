@@ -36,6 +36,16 @@ interface Paiement {
   transactionId: string | null;
   date_paiement: string | null;
   createdAt: string;
+  patient?: {
+    prenom?: string;
+    nom?: string;
+    telephone?: string;
+    date_naissance?: string | null;
+    user?: {
+      name?: string;
+      email?: string;
+    };
+  };
   rendezVous: {
     date: string;
     heure: string;
@@ -48,6 +58,13 @@ interface Paiement {
     };
   };
 }
+
+const getPatientFullName = (patient?: Paiement['patient']) => {
+  if (!patient) return undefined;
+
+  const fallback = `${patient.prenom || ''} ${patient.nom || ''}`.trim();
+  return patient.user?.name || fallback || undefined;
+};
 
 const getMethodeLabel = (methode: string) => {
   const labels: Record<string, string> = {
@@ -134,7 +151,7 @@ export const PatientPaiements: React.FC = () => {
   const handleDownloadInvoice = async (paiement: Paiement) => {
     try {
       const blob = await apiService.getBlob(`/paiements/${paiement.id}/facture/download`);
-      downloadBlobFile(blob, `facture-${paiement.id}.pdf`);
+      downloadBlobFile(blob, `FAC-${String(paiement.id).padStart(5, '0')}.pdf`);
       toast.success('Facture téléchargée');
     } catch (error: any) {
       toast.error(error.message || 'Téléchargement impossible');
@@ -154,7 +171,7 @@ export const PatientPaiements: React.FC = () => {
   if (error) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div className="bg-gradient-primary rounded-2xl p-6 md:p-8 text-white">
+        <div className="bg-primary rounded-2xl p-6 md:p-8 text-white">
           <h1 className="text-2xl md:text-3xl font-bold font-display mb-2">
             Mes Paiements 💳
           </h1>
@@ -177,7 +194,7 @@ export const PatientPaiements: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="bg-gradient-primary rounded-2xl p-6 md:p-8 text-white">
+      <div className="bg-primary rounded-2xl p-6 md:p-8 text-white">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold font-display mb-2">
@@ -340,6 +357,10 @@ export const PatientPaiements: React.FC = () => {
                               transactionId: paiement.transactionId,
                               date_paiement: paiement.date_paiement,
                               createdAt: paiement.createdAt,
+                              patientName: getPatientFullName(paiement.patient),
+                              patientEmail: paiement.patient?.user?.email || undefined,
+                              patientPhone: paiement.patient?.telephone || undefined,
+                              patientDob: paiement.patient?.date_naissance || undefined,
                               rendezVous: paiement.rendezVous,
                             })
                           }

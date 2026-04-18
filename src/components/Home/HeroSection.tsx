@@ -32,11 +32,7 @@ export const HeroSection: React.FC = () => {
       />
       <motion.div
         className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle at 20% 20%, rgba(59,193,168,0.22), transparent 45%), radial-gradient(circle at 80% 30%, rgba(12,119,121,0.25), transparent 40%), radial-gradient(circle at 50% 75%, rgba(255,255,255,0.14), transparent 35%)',
-          backgroundSize: '180% 180%',
-        }}
+        style={{ opacity: 0 }}
         animate={{ backgroundPosition: ['0% 0%', '100% 40%', '0% 0%'] }}
         transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
       />

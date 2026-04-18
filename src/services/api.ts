@@ -127,6 +127,9 @@ class APIService {
    * GET request
    */
   async get<T = any>(endpoint: string, options?: RequestInit): Promise<T> {
+    if (endpoint === '/rendez-vous') {
+      console.trace('[DEBUG] Appel GET /rendez-vous — origine :');
+    }
     const response = await this.fetchWithHandling(endpoint, {
       method: 'GET',
       headers: this.getHeaders(),

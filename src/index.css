@@ -73,11 +73,6 @@
     --health-red-light: 0 84% 95%;
     --health-gray: 215 16% 47%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(174 80% 35%) 0%, hsl(176 100% 42%) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(174 80% 35%) 0%, hsl(176 100% 42%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(174 80% 30%) 0%, hsl(176 100% 38%) 100%);
-
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 hsl(222 47% 11% / 0.05);
     --shadow-md: 0 4px 6px -1px hsl(222 47% 11% / 0.1), 0 2px 4px -2px hsl(222 47% 11% / 0.1);
@@ -157,12 +152,11 @@
 
   /* Stat Card */
   .stat-card {
-    @apply relative overflow-hidden rounded-xl p-6 text-white;
-    background: var(--gradient-primary);
+    @apply relative overflow-hidden rounded-xl p-6 text-white bg-primary;
   }
 
   .stat-card-success {
-    background: var(--gradient-success);
+    @apply bg-primary;
   }
 
   /* Button Variants */
@@ -210,7 +204,7 @@
 
   .sidebar-link-active {
     @apply text-sidebar-primary-foreground;
-    background: linear-gradient(135deg, hsl(var(--sidebar-primary)) 0%, hsl(215 92% 56%) 100%);
+    background: hsl(var(--sidebar-primary));
     border-color: hsl(215 92% 70% / 0.35);
     box-shadow: 0 10px 22px -14px hsl(216 95% 62% / 0.8);
     @apply hover:text-sidebar-primary-foreground;
@@ -287,33 +281,7 @@
   }
 }
 
-@layer utilities {
-  .text-gradient-primary {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
 
-  .text-gradient-hero {
-    background: var(--gradient-hero);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .bg-gradient-primary {
-    background: var(--gradient-primary);
-  }
-
-  .bg-gradient-success {
-    background: var(--gradient-success);
-  }
-
-  .bg-gradient-hero {
-    background: var(--gradient-hero);
-  }
-}
 
 @keyframes fadeIn {
   from {

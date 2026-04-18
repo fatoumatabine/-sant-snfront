@@ -100,7 +100,7 @@ const AboutPage: React.FC = () => {
                 alt="Professionnelle de sante avec une mere et son enfant"
                 className="h-[520px] w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#002F3A]/75 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-[#002F3A]/40" />
             </div>
 
             <div>

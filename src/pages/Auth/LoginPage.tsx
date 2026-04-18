@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Eye, EyeOff, Loader2, Mail, Lock, Heart,
+  Eye, EyeOff, Loader2, Mail, Lock,
   ShieldCheck, Clock, Zap, UserPlus, ArrowRight, ArrowLeft,
 } from 'lucide-react';
 import { useAuthStore, getRedirectPath } from '@/store/authStore';
@@ -103,9 +103,7 @@ export const LoginPage: React.FC = () => {
                   <ArrowLeft className="h-4 w-4" />
                 </Link>
                 <Link to="/" className="flex items-center gap-2 group">
-                  <div className="w-9 h-9 bg-[#3BC1A8] rounded-xl flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                    <Heart className="h-5 w-5 text-white fill-white" />
-                  </div>
+                  <img src="/Sante sn.png" alt="Santé SN" className="h-9 w-9 rounded-xl object-contain group-hover:scale-105 transition-transform" />
                   <span className="font-bold text-lg font-display">
                     <span className="text-[#005461]">SANTÉ</span>
                     <span className="text-[#3BC1A8]"> SN</span>
@@ -268,7 +266,7 @@ export const LoginPage: React.FC = () => {
           {/* ══════════════ RIGHT – Welcome Panel ══════════════ */}
           <div
             className="hidden lg:flex w-full lg:w-[45%] flex-col justify-between p-10 relative overflow-hidden"
-            style={{ background: 'linear-gradient(155deg, #005461 0%, #0C7779 50%, #249E94 100%)' }}
+            style={{ background: '#0C7779' }}
           >
             {/* Decorative circles */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
@@ -282,9 +280,7 @@ export const LoginPage: React.FC = () => {
               {/* Top: brand + welcome */}
               <div>
                 <div className="flex items-center gap-2 mb-10">
-                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                    <Heart className="h-5 w-5 text-white fill-white" />
-                  </div>
+                  <img src="/Sante sn.png" alt="Santé SN" className="h-10 w-10 rounded-xl object-contain" />
                   <span className="text-white font-bold text-lg font-display">SANTÉ SN</span>
                 </div>
 

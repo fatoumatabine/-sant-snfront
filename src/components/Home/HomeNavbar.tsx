@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Heart, ChevronDown, LogOut, User } from 'lucide-react';
+import { Menu, X, ChevronDown, LogOut, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import { marketingNavLinks } from './marketingNavigation';
@@ -40,9 +40,7 @@ export const HomeNavbar: React.FC = () => {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-11 h-11 bg-[#3BC1A8] rounded-2xl flex items-center justify-center shadow-lg shadow-[#3BC1A8]/30 group-hover:scale-110 transition-transform duration-300">
-              <Heart className="h-6 w-6 text-white fill-white" />
-            </div>
+            <img src="/Sante sn.png" alt="Santé SN" className="h-11 w-11 rounded-2xl object-contain group-hover:scale-110 transition-transform duration-300" />
             <span className="font-bold text-2xl font-display tracking-tight">
               <span className="text-[#005461]">SANTÉ</span>
               <span className="text-[#3BC1A8]"> SN</span>

@@ -437,7 +437,7 @@ export const MedecinDashboardNew: React.FC = () => {
       <section className="rounded-[30px] border border-border bg-card px-4 py-5 shadow-card sm:px-6">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-lg font-bold text-white">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-lg font-bold text-white">
               {getInitials(user?.prenom, user?.nom)}
             </div>
             <div>
@@ -554,7 +554,7 @@ export const MedecinDashboardNew: React.FC = () => {
               alt="Teleconsultation"
               className="absolute inset-0 h-full w-full object-cover opacity-35"
             />
-            <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/85 to-accent/90" />
+            <div className="absolute inset-0 bg-primary/90" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.32),transparent_40%),radial-gradient(circle_at_80%_25%,rgba(255,255,255,0.24),transparent_38%),radial-gradient(circle_at_65%_78%,rgba(255,255,255,0.2),transparent_35%)]" />
             <div className="absolute -left-16 top-12 h-56 w-56 rounded-full border border-white/30" />
             <div className="absolute bottom-10 right-10 h-36 w-36 rounded-full border border-white/25" />

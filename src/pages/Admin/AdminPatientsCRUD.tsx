@@ -242,7 +242,7 @@ export const AdminPatientsCRUD: React.FC = () => {
     <div className="space-y-6 animate-fade-in">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="p-6 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 to-background">
+        <div className="p-6 rounded-xl border border-primary/20 bg-primary/10">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-muted-foreground">Total Patients</p>
@@ -253,7 +253,7 @@ export const AdminPatientsCRUD: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="p-6 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-background">
+        <div className="p-6 rounded-xl border border-emerald-200 bg-emerald-50">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-muted-foreground">Inscrits ce mois</p>
@@ -264,7 +264,7 @@ export const AdminPatientsCRUD: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="p-6 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-background">
+        <div className="p-6 rounded-xl border border-violet-200 bg-violet-50">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-muted-foreground">Majeurs</p>
@@ -277,7 +277,7 @@ export const AdminPatientsCRUD: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="p-6 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-background">
+        <div className="p-6 rounded-xl border border-amber-200 bg-amber-50">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-muted-foreground">Avec groupe sanguin</p>
@@ -584,7 +584,7 @@ export const AdminPatientsCRUD: React.FC = () => {
       {showModal && modalMode === 'view' && selectedPatient && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full">
-            <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 flex items-center justify-between">
+            <div className="bg-purple-600 text-white p-6 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold">
                   {selectedPatient.prenom} {selectedPatient.nom}

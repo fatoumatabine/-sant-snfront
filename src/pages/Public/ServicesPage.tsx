@@ -135,7 +135,7 @@ const ServicesPage: React.FC = () => {
                           alt={service.specialite}
                           className="h-full w-full object-cover"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#002F3A]/75 via-[#002F3A]/10 to-transparent" />
+                        <div className="absolute inset-0 bg-[#002F3A]/50" />
                         <div className="absolute left-6 top-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#3BC1A8] shadow-lg">
                           <presentation.Icon className="h-7 w-7 text-white" />
                         </div>

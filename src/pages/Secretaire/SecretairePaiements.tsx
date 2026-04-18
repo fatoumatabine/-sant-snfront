@@ -423,7 +423,7 @@ export const SecretairePaiements: React.FC = () => {
   const handleDownloadInvoice = async (paiementId: string) => {
     try {
       const blob = await apiService.getBlob(`/paiements/${paiementId}/facture/download`);
-      downloadBlobFile(blob, `facture-${paiementId}.pdf`);
+      downloadBlobFile(blob, `FAC-${String(paiementId).padStart(5, '0')}.pdf`);
       toast.success('Facture téléchargée');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Facture indisponible';
@@ -433,7 +433,7 @@ export const SecretairePaiements: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="bg-gradient-primary rounded-2xl p-6 md:p-8 text-white">
+      <div className="bg-primary rounded-2xl p-6 md:p-8 text-white">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold font-display mb-2">Gestion des Paiements 💳</h1>

@@ -283,7 +283,7 @@ export const AdminSecretairesCRUD: React.FC = () => {
     <div className="space-y-6 animate-fade-in">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="p-6 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 to-background">
+        <div className="p-6 rounded-xl border border-primary/20 bg-primary/10">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-muted-foreground">Total Secrétaires</p>
@@ -294,7 +294,7 @@ export const AdminSecretairesCRUD: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="p-6 rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50 to-background">
+        <div className="p-6 rounded-xl border border-sky-200 bg-sky-50">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-muted-foreground">Avec Médecin</p>
@@ -305,7 +305,7 @@ export const AdminSecretairesCRUD: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="p-6 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-background">
+        <div className="p-6 rounded-xl border border-amber-200 bg-amber-50">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-muted-foreground">Sans Médecin</p>
@@ -316,7 +316,7 @@ export const AdminSecretairesCRUD: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="p-6 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-background">
+        <div className="p-6 rounded-xl border border-emerald-200 bg-emerald-50">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-muted-foreground">Ce Mois</p>
@@ -334,7 +334,7 @@ export const AdminSecretairesCRUD: React.FC = () => {
       </div>
 
       {/* Modern Header with Glassmorphic Background */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-primary/10 border border-primary/20 p-8">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -z-10" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent/10 rounded-full blur-2xl -z-10" />
         
@@ -472,7 +472,7 @@ export const AdminSecretairesCRUD: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="relative">
-                          <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform duration-300">
+                          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform duration-300">
                             <span className="font-semibold text-sm">
                               {secretaire.prenom[0]}{secretaire.nom[0]}
                             </span>
@@ -567,7 +567,7 @@ export const AdminSecretairesCRUD: React.FC = () => {
       {showModal && modalMode !== 'view' && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
           <div className="bg-white rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-slide-up">
-            <div className="sticky top-0 bg-gradient-to-br from-primary to-primary/80 text-white p-6 flex items-center justify-between">
+            <div className="sticky top-0 bg-primary text-white p-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
                   <Users className="h-6 w-6 text-white" />
@@ -714,7 +714,7 @@ export const AdminSecretairesCRUD: React.FC = () => {
       {showModal && modalMode === 'view' && selectedSecretaire && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
           <div className="bg-white rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-slide-up">
-            <div className="relative bg-gradient-to-br from-primary via-primary to-primary/80 text-white p-8">
+            <div className="relative bg-primary text-white p-8">
               {/* Decorative circles */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full blur-xl" />
@@ -820,7 +820,7 @@ export const AdminSecretairesCRUD: React.FC = () => {
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
           <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl animate-slide-up">
-            <div className="relative bg-gradient-to-br from-destructive to-destructive/80 text-white p-8">
+            <div className="relative bg-destructive text-white p-8">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
               <div className="relative flex items-center gap-4">
                 <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shrink-0">

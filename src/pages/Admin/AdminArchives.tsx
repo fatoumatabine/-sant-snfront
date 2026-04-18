@@ -101,7 +101,7 @@ export const AdminArchives: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-6">
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
         <div className="flex items-center gap-3">
           <div className="h-12 w-12 rounded-xl bg-amber-100 flex items-center justify-center">
             <ArchiveRestore className="h-6 w-6 text-amber-700" />

@@ -277,7 +277,7 @@ export const PatientRendezVous: React.FC = () => {
               <div key={rdv.id} className="card-health">
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
                   <div className="flex items-center gap-4 flex-1">
-                    <div className="w-14 h-14 bg-gradient-primary rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">
+                    <div className="w-14 h-14 bg-primary rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">
                       {medecinName.slice(0, 2).toUpperCase()}
                     </div>
                     <div>

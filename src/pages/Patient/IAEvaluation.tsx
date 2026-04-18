@@ -7,6 +7,7 @@ import { apiService } from '@/services/api';
 import { API_ENDPOINTS } from '@/config/api-endpoints';
 import { toast } from 'sonner';
 import { savePatientTriage } from '@/lib/patientTriage';
+import { useAuthStore } from '@/store/authStore';
 
 const OTHER_OPTION_LABEL = 'Autre';
 
@@ -21,6 +22,7 @@ const unwrapApiData = <T,>(response: ApiDataEnvelope<T>): T => {
 };
 
 export const IAEvaluation: React.FC = () => {
+  const { user } = useAuthStore();
   const [currentStep, setCurrentStep] = useState(0);
   const [reponses, setReponses] = useState<Record<string, string | string[]>>({});
   const [otherChoiceSelections, setOtherChoiceSelections] = useState<Record<string, boolean>>({});
@@ -126,6 +128,7 @@ export const IAEvaluation: React.FC = () => {
 
         savePatientTriage({
           evaluationId: savedEvaluation.id,
+          userId: String(user?.id || ''),
           level: savedEvaluation.niveau,
           urgent: savedEvaluation.urgent,
           specialiteConseillee: savedEvaluation.specialiteConseillee || undefined,

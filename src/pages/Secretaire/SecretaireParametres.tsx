@@ -115,7 +115,7 @@ export const SecretaireParametres: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in pb-8">
       {/* Header */}
-      <div className="bg-gradient-primary rounded-2xl p-6 md:p-8 text-white">
+      <div className="bg-primary rounded-2xl p-6 md:p-8 text-white">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold font-display mb-2 flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-lg">

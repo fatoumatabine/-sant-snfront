@@ -124,15 +124,7 @@ const DocumentHeader: React.FC<{ date: string }> = ({ date }) => (
     <div className="relative z-10 flex items-start justify-between px-10 pt-6 pb-4">
       {/* Identité clinique */}
       <div className="flex items-center gap-3">
-        <div
-          className="flex items-center justify-center rounded-full"
-          style={{ width: 46, height: 46, background: 'linear-gradient(135deg,#0C7779,#249E94)' }}
-        >
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
-            <rect x="8" y="2" width="6" height="18" rx="2" fill="white" />
-            <rect x="2" y="8" width="18" height="6" rx="2" fill="white" />
-          </svg>
-        </div>
+        <img src="/Sante sn.png" alt="Santé SN" style={{ width: 46, height: 46, borderRadius: 8, objectFit: 'contain' }} />
         <div>
           <p className="font-bold text-sm leading-tight" style={{ color: '#005461', fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
             SANTÉ SN
@@ -258,11 +250,11 @@ export const OrdonnanceDocument: React.FC<OrdonnanceDocumentProps> = ({
       className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-4 md:p-6"
       onClick={onClose}
     >
-      <div className="fixed right-4 top-4 z-20 md:right-6 md:top-6">
+      <div className="fixed right-4 top-4 z-[100] md:right-6 md:top-6">
         <Button
           variant="secondary"
-          className="gap-2 border border-white/30 bg-white/95 text-slate-900 shadow-lg hover:bg-white"
-          onClick={onClose}
+          className="gap-2 border border-white/30 bg-white text-slate-900 shadow-xl hover:bg-gray-100"
+          onClick={(e) => { e.stopPropagation(); onClose(); }}
         >
           <X className="h-4 w-4" />
           Fermer

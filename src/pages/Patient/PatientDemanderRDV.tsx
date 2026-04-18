@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Calendar, Plus, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -6,6 +6,7 @@ import { apiService } from '@/services/api';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { clearPatientTriage, getPatientTriage, getPatientTriageValidityHours, isPatientTriageValid } from '@/lib/patientTriage';
+import { useAuthStore } from '@/store/authStore';
 
 interface Medecin {
   id: number;
@@ -26,8 +27,9 @@ interface FormData {
 }
 
 export const PatientDemanderRDV: React.FC = () => {
-  const triage = getPatientTriage();
-  const hasValidTriage = isPatientTriageValid(triage);
+  const { user } = useAuthStore();
+  const triage = getPatientTriage(user?.id);
+  const hasValidTriage = isPatientTriageValid(triage, user?.id);
   const triageIsUrgent = Boolean(triage?.urgent && hasValidTriage);
   const specialiteForced = hasValidTriage && Boolean(triage?.specialiteConseillee);
 
@@ -64,6 +66,24 @@ export const PatientDemanderRDV: React.FC = () => {
     }
   });
 
+  const shouldLoadAvailableSlots =
+    formData.type !== 'prestation' && formData.medecin_id > 0 && Boolean(formData.date);
+
+  const {
+    data: availableSlots = [],
+    isLoading: availableSlotsLoading,
+  } = useQuery({
+    queryKey: ['patient-rdv-available-slots', formData.medecin_id, formData.date],
+    enabled: shouldLoadAvailableSlots,
+    queryFn: async () => {
+      const response = await apiService.get(
+        `/rendez-vous/creneaux-disponibles?medecinId=${formData.medecin_id}&date=${formData.date}`
+      );
+      const slots = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+      return Array.isArray(slots) ? (slots as string[]) : [];
+    },
+  });
+
   // Mutation pour créer le RDV
   const createRDVMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -96,7 +116,8 @@ export const PatientDemanderRDV: React.FC = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'medecin_id' ? Number(value) : value
+      [name]: name === 'medecin_id' ? Number(value) : value,
+      ...(name === 'medecin_id' || name === 'date' ? { heure: '' } : {}),
     }));
     // Clear error for this field
     if (errors[name]) {
@@ -140,6 +161,11 @@ export const PatientDemanderRDV: React.FC = () => {
       today.setHours(0, 0, 0, 0);
       if (selectedDate < today) {
         newErrors.date = 'La date ne peut pas être dans le passé';
+      } else if (formData.type !== 'prestation') {
+        const weekday = new Date(`${formData.date}T00:00:00Z`).getUTCDay();
+        if (weekday === 0 || weekday === 6) {
+          newErrors.date = 'Veuillez choisir un jour ouvré entre lundi et vendredi';
+        }
       }
     }
 
@@ -153,15 +179,33 @@ export const PatientDemanderRDV: React.FC = () => {
       }
     }
 
+    if (formData.type !== 'prestation' && formData.medecin_id > 0 && formData.date) {
+      if (!availableSlotsLoading && availableSlots.length === 0) {
+        newErrors.heure = 'Aucun créneau disponible pour cette date. Choisissez un autre jour.';
+      } else if (formData.heure && !availableSlots.includes(formData.heure)) {
+        newErrors.heure = 'Veuillez choisir un créneau proposé par le médecin';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  useEffect(() => {
+    if (formData.type === 'prestation' || !formData.heure) {
+      return;
+    }
+
+    if (!availableSlots.includes(formData.heure)) {
+      setFormData((prev) => ({ ...prev, heure: '' }));
+    }
+  }, [availableSlots, formData.heure, formData.type]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!hasValidTriage) {
-      toast.error('Veuillez d’abord faire la pré-évaluation IA avant de demander un rendez-vous');
+      toast.error("Veuillez d'abord faire la pré-évaluation IA avec ce compte avant de demander un rendez-vous");
       return;
     }
     
@@ -299,7 +343,7 @@ export const PatientDemanderRDV: React.FC = () => {
       )}
 
       {/* Header */}
-      <div className="bg-gradient-primary rounded-2xl p-4 md:p-5 text-white">
+      <div className="bg-primary rounded-2xl p-4 md:p-5 text-white">
         <h1 className="text-xl md:text-2xl font-bold font-display mb-1 flex items-center gap-2">
           <Calendar className="h-6 w-6" />
           Demander un rendez-vous
@@ -323,8 +367,8 @@ export const PatientDemanderRDV: React.FC = () => {
       )}
 
       {/* Formulaire */}
-      <div className={`relative rounded-3xl border border-primary/10 bg-gradient-to-b from-white to-slate-50/70 p-4 md:p-5 shadow-sm ${!hasValidTriage ? 'opacity-55 pointer-events-none' : ''}`}>
-        <div className="absolute inset-x-0 top-0 h-1 rounded-t-3xl bg-gradient-to-r from-cyan-400 via-blue-500 to-emerald-400" />
+      <div className={`relative rounded-3xl border border-primary/10 bg-white p-4 md:p-5 shadow-sm ${!hasValidTriage ? 'opacity-55 pointer-events-none' : ''}`}>
+        <div className="absolute inset-x-0 top-0 h-1 rounded-t-3xl bg-primary" />
         <form onSubmit={handleSubmit} className="grid grid-cols-1 xl:grid-cols-12 gap-4">
           {/* Type de consultation */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 xl:col-span-8">
@@ -479,22 +523,54 @@ export const PatientDemanderRDV: React.FC = () => {
             <label className="block text-sm font-semibold mb-2">
               Horaire <span className="text-red-600">*</span>
             </label>
-            <input
-              type="time"
-              name="heure"
-              value={formData.heure}
-              onChange={handleInputChange}
-              min="08:00"
-              max="18:00"
-              className={fieldClass(Boolean(errors.heure))}
-            />
+            {formData.type === 'prestation' ? (
+              <input
+                type="time"
+                name="heure"
+                value={formData.heure}
+                onChange={handleInputChange}
+                min="08:00"
+                max="18:00"
+                className={fieldClass(Boolean(errors.heure))}
+              />
+            ) : !formData.medecin_id || !formData.date ? (
+              <div className="w-full px-4 py-3 border-2 rounded-xl bg-muted/30 text-muted-foreground">
+                Sélectionnez d'abord un médecin et une date pour voir les créneaux disponibles.
+              </div>
+            ) : availableSlotsLoading ? (
+              <div className="w-full px-4 py-3 border-2 rounded-xl bg-muted/30 text-muted-foreground">
+                Chargement des créneaux disponibles...
+              </div>
+            ) : availableSlots.length > 0 ? (
+              <select
+                name="heure"
+                value={formData.heure}
+                onChange={handleInputChange}
+                className={fieldClass(Boolean(errors.heure))}
+              >
+                <option value="">Sélectionner un créneau</option>
+                {availableSlots.map((slot) => (
+                  <option key={slot} value={slot}>
+                    {slot}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="w-full px-4 py-3 border-2 border-orange-200 rounded-xl bg-orange-50 text-orange-800">
+                Aucun créneau disponible pour cette date. Essayez un autre jour.
+              </div>
+            )}
             {errors.heure && (
               <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
                 <AlertCircle className="h-3 w-3" />
                 {errors.heure}
               </p>
             )}
-            <p className="text-xs text-muted-foreground mt-1">08:00 - 18:00</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {formData.type === 'prestation'
+                ? '08:00 - 18:00'
+                : 'Choisissez un créneau réellement disponible'}
+            </p>
           </div>
 
           {/* Motif (optionnel) */}

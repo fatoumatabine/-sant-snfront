@@ -3,6 +3,7 @@ export type TriageOrientation = 'auto_soin' | 'rendez_vous' | 'urgence' | 'revue
 
 export interface PatientTriageState {
   evaluationId: number;
+  userId: string;
   level: TriageLevel;
   urgent: boolean;
   specialiteConseillee?: string;
@@ -17,7 +18,9 @@ export interface PatientTriageState {
 const STORAGE_KEY = 'sante-sn-patient-triage';
 const TRIAGE_VALID_HOURS = 72;
 
-export function savePatientTriage(input: Omit<PatientTriageState, 'createdAt'> & { createdAt?: string }): void {
+export function savePatientTriage(
+  input: Omit<PatientTriageState, 'createdAt'> & { createdAt?: string }
+): void {
   const payload: PatientTriageState = {
     ...input,
     createdAt: input.createdAt || new Date().toISOString(),
@@ -25,18 +28,33 @@ export function savePatientTriage(input: Omit<PatientTriageState, 'createdAt'> &
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 }
 
-export function getPatientTriage(): PatientTriageState | null {
+export function getPatientTriage(userId?: string): PatientTriageState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as PatientTriageState;
+    const triage = JSON.parse(raw) as Partial<PatientTriageState>;
+
+    if (!triage || typeof triage !== 'object') {
+      return null;
+    }
+
+    if (userId && triage.userId !== userId) {
+      return null;
+    }
+
+    if (!triage.userId) {
+      return null;
+    }
+
+    return triage as PatientTriageState;
   } catch {
     return null;
   }
 }
 
-export function isPatientTriageValid(triage: PatientTriageState | null): boolean {
+export function isPatientTriageValid(triage: PatientTriageState | null, userId?: string): boolean {
   if (!triage?.createdAt || !triage.evaluationId) return false;
+  if (userId && triage.userId !== userId) return false;
   const createdAt = new Date(triage.createdAt).getTime();
   if (Number.isNaN(createdAt)) return false;
   const maxAgeMs = TRIAGE_VALID_HOURS * 60 * 60 * 1000;

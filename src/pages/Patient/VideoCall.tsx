@@ -211,17 +211,17 @@ export const VideoCall: React.FC = () => {
 
       let message: string;
       if (!nextOnlineAppointment) {
-        message = 'Aucune consultation vidéo active ou planifiée n’a été trouvée.';
+        message = "Aucune consultation vidéo active ou planifiée n'a été trouvée.";
       } else if (isMedecin && startableAppointment) {
         message = `Aucun appel actif. Vous pouvez démarrer la consultation de ${startableAppointment.counterpartLabel}.`;
       } else if (!isMedecin && nextOnlineAppointment.rendezVousStatus === 'paye') {
         message = 'Le médecin doit démarrer la consultation avant que vous puissiez rejoindre la salle.';
       } else if (nextOnlineAppointment.rendezVousStatus === 'confirme') {
-        message = 'Ce rendez-vous en ligne doit encore être payé avant l’ouverture de la salle vidéo.';
+        message = "Ce rendez-vous en ligne doit encore être payé avant l'ouverture de la salle vidéo.";
       } else if (nextOnlineAppointment.rendezVousStatus === 'en_attente') {
         message = 'Le rendez-vous en ligne est encore en attente de validation.';
       } else {
-        message = 'Aucun appel vidéo actif n’est disponible actuellement.';
+        message = "Aucun appel vidéo actif n'est disponible actuellement.";
       }
 
       setDiscovery({
@@ -369,7 +369,7 @@ export const VideoCall: React.FC = () => {
         {!consultationId && !error && (
           <div className="space-y-4">
             {discovery.isLookingUp && (
-              <p className="text-sm text-muted-foreground">Recherche d’une consultation vidéo active...</p>
+              <p className="text-sm text-muted-foreground">Recherche d'une consultation vidéo active...</p>
             )}
 
             {!discovery.isLookingUp && discovery.message && (
@@ -439,7 +439,7 @@ export const VideoCall: React.FC = () => {
                   <div>
                     <p className="font-medium">Connexion recommandée dans un nouvel onglet</p>
                     <p>
-                      Sur l’environnement local, Jitsi est plus fiable en ouverture directe qu’en iframe intégrée.
+                      Sur l'environnement local, Jitsi est plus fiable en ouverture directe qu'en iframe intégrée.
                     </p>
                   </div>
                 </div>
@@ -480,7 +480,7 @@ export const VideoCall: React.FC = () => {
               )}
               <Button variant="destructive" onClick={() => window.history.back()} className="gap-2">
                 <PhoneOff className="h-4 w-4" />
-                Quitter l’appel
+                Quitter l'appel
               </Button>
             </div>
 
@@ -497,7 +497,7 @@ export const VideoCall: React.FC = () => {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => navigate(‘/medecin/patients’)}
+                    onClick={() => navigate('/medecin/patients')}
                     className="gap-2"
                   >
                     <Users className="h-4 w-4" />

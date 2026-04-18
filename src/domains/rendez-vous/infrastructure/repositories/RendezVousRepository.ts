@@ -25,7 +25,7 @@ export class RendezVousRepository implements IRendezVousRepository {
   }
 
   async getAll(): Promise<RendezVousListResponse> {
-    const response = await apiService.get(`${API_BASE}`);
+    const response = await apiService.get(`${API_BASE}/mes-rdv`);
     const data = unwrapData<RendezVous[]>(response);
     return { data, total: data.length };
   }

@@ -330,7 +330,7 @@ export const MedecinOrdonnances: React.FC = () => {
         </Button>
       </div>
 
-      <div className="card-health border border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+      <div className="card-health border border-primary/20 bg-primary/5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold flex items-center gap-2">
             <Filter className="h-4 w-4 text-primary" />

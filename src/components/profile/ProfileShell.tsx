@@ -135,8 +135,8 @@ export const ProfileShell: React.FC<ProfileShellProps> = ({
 
   return (
     <div className="space-y-6 animate-fade-in pb-10">
-      <section className="relative overflow-hidden rounded-[32px] border border-primary/15 bg-gradient-primary text-white shadow-[0_28px_80px_-38px_rgba(6,95,70,0.75)]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.24),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(251,191,36,0.16),transparent_28%)]" />
+      <section className="relative overflow-hidden rounded-[32px] border border-primary/15 bg-primary text-white shadow-[0_28px_80px_-38px_rgba(6,95,70,0.75)]">
+
         <div className="absolute -right-16 top-8 h-44 w-44 rounded-full border border-white/15 bg-white/10 blur-2xl" />
         <div className="absolute -bottom-16 left-16 h-36 w-36 rounded-full bg-black/10 blur-2xl" />
 
@@ -184,7 +184,7 @@ export const ProfileShell: React.FC<ProfileShellProps> = ({
               <div className="relative">
                 <Avatar className="h-32 w-32 rounded-[32px] border-4 border-white shadow-2xl">
                   <AvatarImage src={getAvatarSrc(avatar)} alt={name || email} className="object-cover" />
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-3xl font-bold text-white">
+                  <AvatarFallback className="bg-primary text-3xl font-bold text-white">
                     {getUserInitials(firstName, lastName, email)}
                   </AvatarFallback>
                 </Avatar>

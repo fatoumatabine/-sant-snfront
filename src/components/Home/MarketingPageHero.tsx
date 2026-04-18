@@ -128,7 +128,7 @@ export const MarketingPageHero: React.FC<MarketingPageHeroProps> = ({
                   alt={imageAlt}
                   className="h-[420px] w-full object-cover md:h-[520px]"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#002F3A]/70 via-[#002F3A]/5 to-transparent" />
+                <div className="absolute inset-0 bg-[#002F3A]/50" />
               </div>
 
               {badge && (

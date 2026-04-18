@@ -116,7 +116,7 @@ export const NotificationsPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-primary rounded-2xl p-6 md:p-8 text-white">
+      <div className="bg-primary rounded-2xl p-6 md:p-8 text-white">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">{t('notifications.title')}</h1>
