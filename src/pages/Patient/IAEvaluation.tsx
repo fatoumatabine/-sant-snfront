@@ -300,8 +300,12 @@ export const IAEvaluation: React.FC = () => {
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3">
-            <Link to="/patient/demander-rdv" className="btn-health-primary flex-1">
-              {resultat.urgent ? 'Prendre rendez-vous rapidement' : 'Prendre rendez-vous'}
+            <Link to="/patient/demander-rdv" className="btn-health-primary flex-1 text-center">
+              {resultat.urgent
+                ? 'Prendre rendez-vous rapidement'
+                : resultat.specialiteConseillee
+                  ? `Prendre RDV en ${resultat.specialiteConseillee}`
+                  : 'Prendre rendez-vous'}
             </Link>
             <button
               onClick={resetEvaluation}

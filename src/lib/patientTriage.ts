@@ -43,6 +43,10 @@ export function isPatientTriageValid(triage: PatientTriageState | null): boolean
   return Date.now() - createdAt <= maxAgeMs;
 }
 
+export function clearPatientTriage(): void {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
 export function getPatientTriageValidityHours(): number {
   return TRIAGE_VALID_HOURS;
 }

@@ -5,7 +5,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiService } from '@/services/api';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
-import { getPatientTriage, getPatientTriageValidityHours, isPatientTriageValid } from '@/lib/patientTriage';
+import { clearPatientTriage, getPatientTriage, getPatientTriageValidityHours, isPatientTriageValid } from '@/lib/patientTriage';
 
 interface Medecin {
   id: number;
@@ -29,6 +29,7 @@ export const PatientDemanderRDV: React.FC = () => {
   const triage = getPatientTriage();
   const hasValidTriage = isPatientTriageValid(triage);
   const triageIsUrgent = Boolean(triage?.urgent && hasValidTriage);
+  const specialiteForced = hasValidTriage && Boolean(triage?.specialiteConseillee);
 
   const [formData, setFormData] = useState<FormData>({
     type: 'presentiel',
@@ -41,13 +42,17 @@ export const PatientDemanderRDV: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Récupérer les médecins
+  // Récupérer les médecins — par spécialité quand elle est imposée par le triage, sinon liste complète
+  const medecinsEndpoint = specialiteForced && triage?.specialiteConseillee
+    ? `/medecins/specialite/${encodeURIComponent(triage.specialiteConseillee)}`
+    : '/medecins';
+
   const { data: medecins = [], isLoading: medecinsLoading } = useQuery({
-    queryKey: ['medecins-list'],
+    queryKey: ['medecins-list', medecinsEndpoint],
     queryFn: async () => {
-      const response = await apiService.get('/medecins');
+      const response = await apiService.get(medecinsEndpoint);
       return Array.isArray(response.data) ? response.data : (response.data?.data || []);
-    }
+    },
   });
 
   // Récupérer les spécialités
@@ -77,7 +82,11 @@ export const PatientDemanderRDV: React.FC = () => {
       toast.success('Demande de rendez-vous envoyée avec succès');
     },
     onError: (err: any) => {
-      const errorMessage = err?.response?.data?.message || err.message || 'Erreur lors de la création de la demande';
+      const errorMessage = err.message || 'Erreur lors de la création de la demande';
+      // Si l'évaluation IA en localStorage n'existe plus côté serveur, on la purge
+      if (errorMessage.toLowerCase().includes('évaluation') && errorMessage.toLowerCase().includes('introuvable')) {
+        clearPatientTriage();
+      }
       toast.error(errorMessage);
       setErrors({ submit: errorMessage });
     }
@@ -138,7 +147,7 @@ export const PatientDemanderRDV: React.FC = () => {
     if (!formData.heure) {
       newErrors.heure = 'L\'horaire est obligatoire';
     } else {
-      const [hours, minutes] = formData.heure.split(':').map(Number);
+      const [hours] = formData.heure.split(':').map(Number);
       if (hours < 8 || hours >= 18) {
         newErrors.heure = 'L\'horaire doit être entre 08:00 et 18:00';
       }
@@ -348,19 +357,26 @@ export const PatientDemanderRDV: React.FC = () => {
               <label className="block text-sm font-semibold mb-2">
                 Spécialité médicale <span className="text-red-600">*</span>
               </label>
-              <select
-                name="specialite"
-                value={formData.specialite || ''}
-                onChange={handleInputChange}
-                className={fieldClass(Boolean(errors.specialite))}
-              >
-                <option value="">Sélectionner une spécialité</option>
-                {Array.isArray(specialites) && specialites.map((spec: string) => (
-                  <option key={spec} value={spec}>
-                    {spec}
-                  </option>
-                ))}
-              </select>
+              {specialiteForced ? (
+                <div className="w-full h-12 px-4 flex items-center border-2 border-emerald-400 rounded-xl bg-emerald-50 text-emerald-900 font-medium">
+                  {triage?.specialiteConseillee}
+                  <span className="ml-2 text-xs text-emerald-600 font-normal">(recommandée par l'IA)</span>
+                </div>
+              ) : (
+                <select
+                  name="specialite"
+                  value={formData.specialite || ''}
+                  onChange={handleInputChange}
+                  className={fieldClass(Boolean(errors.specialite))}
+                >
+                  <option value="">Sélectionner une spécialité</option>
+                  {Array.isArray(specialites) && specialites.map((spec: string) => (
+                    <option key={spec} value={spec}>
+                      {spec}
+                    </option>
+                  ))}
+                </select>
+              )}
               {errors.specialite && (
                 <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />

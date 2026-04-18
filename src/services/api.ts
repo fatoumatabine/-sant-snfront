@@ -86,7 +86,6 @@ class APIService {
       const state = localStorage.getItem('sante-sn-auth');
       if (state) {
         const parsed = JSON.parse(state);
-        // Zustand stocke le state dans .state ou directement
         const token = parsed.state?.token || parsed.token;
         if (token) {
           this.token = token;
