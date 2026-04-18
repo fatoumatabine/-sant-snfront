@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Video, ExternalLink, PhoneOff, AlertCircle, Calendar, Clock } from 'lucide-react';
+import { Video, ExternalLink, PhoneOff, AlertCircle, Calendar, Clock, FileEdit, Users } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { apiService } from '@/services/api';
@@ -483,6 +483,29 @@ export const VideoCall: React.FC = () => {
                 Quitter l’appel
               </Button>
             </div>
+
+            {isMedecin && consultationId && (
+              <div className="mt-4 rounded-lg border border-border bg-muted/40 p-4 space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Actions post-consultation</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => navigate(`/medecin/ordonnances?consultationId=${consultationId}`)}
+                    className="gap-2"
+                  >
+                    <FileEdit className="h-4 w-4" />
+                    Prescrire une ordonnance
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(‘/medecin/patients’)}
+                    className="gap-2"
+                  >
+                    <Users className="h-4 w-4" />
+                    Voir mes patients
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Search, Edit2, Download, Trash2, X, Filter, RotateCcw, Eye, Loader2 } from 'lucide-react';
 import { OrdonnanceDocument } from '@/components/Common/OrdonnanceDocument';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -71,6 +72,7 @@ const buildContenu = (instructions: string, medicaments: MedicamentInput[]) => {
 };
 
 export const MedecinOrdonnances: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'tous' | 'active'>('tous');
   const [dateFilter, setDateFilter] = useState('');
@@ -80,12 +82,20 @@ export const MedecinOrdonnances: React.FC = () => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [medicaments, setMedicaments] = useState<MedicamentInput[]>([defaultMedicament]);
   const [formData, setFormData] = useState({
-    consultation_id: '',
+    consultation_id: searchParams.get('consultationId') || '',
     patient_name: '',
     instructions: '',
   });
 
   const currentUser = useAuthStore((state) => state.user);
+
+  useEffect(() => {
+    const consultationId = searchParams.get('consultationId');
+    if (consultationId) {
+      setFormData((prev) => ({ ...prev, consultation_id: consultationId }));
+      setShowModal(true);
+    }
+  }, []);
 
   const { data: ordonnances = [], isLoading, refetch } = useQuery({
     queryKey: ['ordonnances'],

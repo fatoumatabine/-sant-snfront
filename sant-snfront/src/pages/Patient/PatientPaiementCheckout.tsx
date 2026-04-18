@@ -453,7 +453,7 @@ export const PatientPaiementCheckout: React.FC = () => {
 
   const simulateMutation = useMutation({
     mutationFn: async () =>
-      apiService.post('/paiements/simuler', { rendezVousId: numericRendezVousId }),
+      apiService.post('/paiements/payer', { rendezVousId: numericRendezVousId }),
     onSuccess: () => {
       toast.success('Paiement simulé avec succès');
       void refetchPaiements();
@@ -1000,7 +1000,7 @@ export const PatientPaiementCheckout: React.FC = () => {
                           disabled={simulateMutation.isPending || displayRendezVous.statut !== 'confirme'}
                         >
                           <CheckCircle2 className="h-4 w-4" />
-                          {simulateMutation.isPending ? 'Simulation...' : 'Simuler le paiement (1 clic)'}
+                          {simulateMutation.isPending ? 'Paiement en cours...' : 'Payer (1 clic)'}
                         </Button>
 
                         <div className="border-t border-border/40 pt-3">
